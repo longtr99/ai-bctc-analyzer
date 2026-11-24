@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Phân Tích Báo Cáo Tài Chính Cá Nhân</title>
+  <link rel="stylesheet" href="css/styles.css?v=1.0" />
+  <!-- CDN Chart.js & SheetJS (ứng dụng vẫn chạy phần bảng & tính toán nếu offline) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-badge">AI</div>
+      <div>
+        <h1>AI Phân Tích BCTC <span class="version-pill">v1.0</span></h1>
+        <p class="subtitle">Công cụ phân tích tài chính cá nhân · Chạy độc lập trên trình duyệt</p>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <div class="control-group">
+        <label for="companySelect">Bộ dữ liệu:</label>
+        <select id="companySelect" onchange="window.onSelectSample(this.value)">
+          <option value="sample_5y">Mẫu 1: DN Sản xuất - TM (5 năm 2022–2026)</option>
+          <option value="sample_q1_2026">Mẫu 2: Case Q1/2026 (Lãi TC, Dòng tiền KD âm)</option>
+          <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <input type="text" id="companyNameInput" placeholder="Tên doanh nghiệp..." onchange="window.onCompanyNameChange(this.value)" />
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="window.downloadExcelTemplate()" title="Tải file Excel mẫu chuẩn">📥 Excel mẫu</button>
+        <label class="btn btn-outline file-upload-btn" title="Nhập file Excel (.xlsx) hoặc CSV">
+          📤 Nhập Excel
+          <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" onchange="window.handleExcelUpload(event)" hidden />
+        </label>
+        <button class="btn btn-outline" onclick="window.exportJsonBackup()" title="Lưu dữ liệu ra file JSON">💾 Backup</button>
+        <label class="btn btn-outline file-upload-btn" title="Khôi phục từ file JSON">
+          📂 Mở Backup
+          <input type="file" id="jsonFileInput" accept=".json" onchange="window.handleJsonImport(event)" hidden />
+        </label>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ In / PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="globalStatus" class="status-banner hidden"></div>
+
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" data-tab="tab-dashboard" onclick="window.switchTab('tab-dashboard')">📊 Dashboard & Biểu đồ</button>
+    <button class="tab-btn" data-tab="tab-statements" onclick="window.switchTab('tab-statements')">📑 BCTC & Ngang/Dọc</button>
+    <button class="tab-btn" data-tab="tab-ratios" onclick="window.switchTab('tab-ratios')">⚠️ Chỉ số & Rủi ro</button>
+    <button class="tab-btn" data-tab="tab-forecast" onclick="window.switchTab('tab-forecast')">📈 Dự báo 3 năm</button>
+    <button class="tab-btn" data-tab="tab-valuation" onclick="window.switchTab('tab-valuation')">⚖️ So sánh ngành & Định giá</button>
+    <button class="tab-btn" data-tab="tab-ai" onclick="window.switchTab('tab-ai')">🤖 Báo cáo & Trợ lý AI</button>
+    <button class="tab-btn" data-tab="tab-learning" onclick="window.switchTab('tab-learning')">📚 5 Module Nền tảng</button>
+  </nav>
+
+  <main class="app-main">
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="tab-panel active">
+      <div class="panel-header">
+        <div>
+          <h2 id="dashboardTitle">Tổng quan sức khỏe tài chính</h2>
+          <p class="muted" id="dashboardSubtitle">Đơn vị tính: Tỷ đồng · Kỳ gần nhất so với kỳ liền trước</p>
+        </div>
+        <div class="inline-controls">
+          <label for="dashboardPeriodSelect">Kỳ phân tích:</label>
+          <select id="dashboardPeriodSelect" onchange="window.renderDashboard()"></select>
+        </div>
+      </div>
+
+      <div id="kpiGrid" class="kpi-grid"></div>
+
+      <div class="charts-grid">
+        <div class="card chart-card full-width">
+          <div class="card-header">
+            <h3>Xu hướng 3–5 năm: Doanh thu, EBITDA, LNST & Biên lợi nhuận</h3>
+            <span class="badge">Trend Analysis</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>Cầu lợi nhuận (Profit Bridge / Waterfall)</h3>
+            <span class="badge">Waterfall</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="waterfallChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>Phân tích biến động (Thực tế vs Kế hoạch / Kỳ trước)</h3>
+            <span class="badge">Variance Analysis</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="varianceChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Tóm tắt nhanh các dấu hiệu nổi bật</h3>
+          <button class="btn btn-sm btn-outline" onclick="window.switchTab('tab-ratios')">Xem chi tiết rủi ro →</button>
+        </div>
+        <div id="dashboardHighlights" class="alerts-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: BCTC & PHÂN TÍCH NGANG / DỌC -->
+    <section id="tab-statements" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Dữ liệu BCTC & Phân tích Ngang / Dọc</h2>
+          <p class="muted">Bấm trực tiếp vào các ô số ở chế độ "Số tuyệt đối" để sửa số liệu. Tự động lưu trên trình duyệt.</p>
+        </div>
+        <div class="inline-controls">
+          <button class="btn btn-sm btn-outline" onclick="window.addNewPeriod()">➕ Thêm kỳ/năm</button>
+          <button class="btn btn-sm btn-outline" onclick="window.resetToCurrentSample()">🔄 Khôi phục mẫu</button>
+        </div>
+      </div>
+
+      <div class="subtab-bar">
+        <div class="pill-group">
+          <button class="pill-btn active" id="stmt-is" onclick="window.setStatementType('is')">Kết quả kinh doanh (KQKD)</button>
+          <button class="pill-btn" id="stmt-bs" onclick="window.setStatementType('bs')">Bảng cân đối kế toán (CĐKT)</button>
+          <button class="pill-btn" id="stmt-cf" onclick="window.setStatementType('cf')">Lưu chuyển tiền tệ (LCTT)</button>
+        </div>
+        <div class="pill-group">
+          <button class="pill-btn active" id="mode-abs" onclick="window.setAnalysisMode('abs')">Số tuyệt đối (tỷ)</button>
+          <button class="pill-btn" id="mode-vertical" onclick="window.setAnalysisMode('vertical')">Phân tích dọc (%)</button>
+          <button class="pill-btn" id="mode-horizontal" onclick="window.setAnalysisMode('horizontal')">Phân tích ngang (% YoY)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table id="statementTable" class="data-table"></table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Ngân sách / Kế hoạch kỳ gần nhất (Dùng cho Variance Analysis)</h3>
+          <span class="muted">Nhập số kế hoạch để so sánh Thực tế vs Kế hoạch</span>
+        </div>
+        <div id="budgetInputsGrid" class="form-grid-4"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: CHỈ SỐ & CẢNH BÁO RỦI RO -->
+    <section id="tab-ratios" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Hệ thống Chỉ số Tài chính & Cảnh báo Rủi ro</h2>
+          <p class="muted">Tự động tính 13 chỉ số cốt lõi, giải thích biến động và quét dấu hiệu bất thường (Red Flags).</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>🚨 Giải thích biến động & Cảnh báo rủi ro tự động</h3>
+          <span class="badge badge-warn">Auto Red-Flag Engine</span>
+        </div>
+        <div id="riskAlertsContainer" class="alerts-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Bảng tổng hợp Chỉ số Tài chính qua các kỳ</h3>
+          <span class="muted">Đánh giá dựa trên kỳ gần nhất</span>
+        </div>
+        <div class="table-responsive">
+          <table id="ratiosTable" class="data-table"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: DỰ BÁO TÀI CHÍNH -->
+    <section id="tab-forecast" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Dự báo Tài chính 3 năm tới (Forecasting)</h2>
+          <p class="muted">Điều chỉnh các giả định bên dưới để mô phỏng Doanh thu, EBITDA, LNTT, Vốn lưu động và Dòng tiền tự do (FCF).</p>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="window.resetForecastAssumptions()">🔄 Đặt lại giả định mặc định</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Giả định mô hình dự báo</h3>
+        </div>
+        <div class="form-grid-3" id="forecastControls">
+          <div class="input-box">
+            <label for="fcRevGrowth">Tăng trưởng doanh thu / năm (%)</label>
+            <input type="number" step="0.5" id="fcRevGrowth" value="12" oninput="window.updateForecast()" />
+          </div>
+          <div class="input-box">
+            <label for="fcGrossMargin">Biên lợi nhuận gộp mục tiêu (%)</label>
+            <input type="number" step="0.5" id="fcGrossMargin" value="28" oninput="window.updateForecast()" />
+          </div>
+          <div class="input-box">
+            <label for="fcOpexPct">CP Bán hàng & QLDN / Doanh thu (%)</label>
+            <input type="number" step="0.5" id="fcOpexPct" value="14" oninput="window.updateForecast()" />
+          </div>
+          <div class="input-box">
+            <label for="fcDepPct">Khấu hao / Doanh thu (%)</label>
+            <input type="number" step="0.5" id="fcDepPct" value="3.5" oninput="window.updateForecast()" />
+          </div>
+          <div class="input-box">
+            <label for="fcCapexPct">CAPEX (Đầu tư TSCĐ) / Doanh thu (%)</label>
+            <input type="number" step="0.5" id="fcCapexPct" value="4" oninput="window.updateForecast()" />
+          </div>
+          <div class="input-box">
+            <label for="fcTaxRate">Thuế suất TNDN (%)</label>
+            <input type="number" step="0.5" id="fcTaxRate" value="20" oninput="window.updateForecast()" />
+          </div>
+          <div class="input-box">
+            <label for="fcNwcPct">Vốn lưu động ròng / Doanh thu (%)</label>
+            <input type="number" step="0.5" id="fcNwcPct" value="15" oninput="window.updateForecast()" />
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="card chart-card full-width">
+          <div class="card-header">
+            <h3>Biểu đồ Dự báo Doanh thu, EBITDA & Dòng tiền tự do (FCF)</h3>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="forecastChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Bảng kết quả Dự báo chi tiết (Tỷ đồng)</h3>
+        </div>
+        <div class="table-responsive">
+          <table id="forecastTable" class="data-table"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SO SÁNH NGÀNH & ĐỊNH GIÁ -->
+    <section id="tab-valuation" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>So sánh cùng ngành & Hỗ trợ Định giá (DCF, Multiples)</h2>
+          <p class="muted">Đặt doanh nghiệp cạnh trung bình ngành/đối thủ và ước tính giá trị nội tại theo DCF, EV/EBITDA, P/E, P/B.</p>
+        </div>
+      </div>
+
+      <div class="two-col-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3>So sánh cùng ngành (Nhập số trung bình ngành)</h3>
+          </div>
+          <div class="form-grid-2">
+            <div class="input-box">
+              <label for="peerGrossMargin">Biên LN gộp ngành (%)</label>
+              <input type="number" step="0.5" id="peerGrossMargin" value="26" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="peerNetMargin">Biên LN ròng ngành (%)</label>
+              <input type="number" step="0.5" id="peerNetMargin" value="9.5" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="peerRoa">ROA ngành (%)</label>
+              <input type="number" step="0.5" id="peerRoa" value="7.5" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="peerRoe">ROE ngành (%)</label>
+              <input type="number" step="0.5" id="peerRoe" value="15" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="peerInvTurn">Vòng quay tồn kho ngành (vòng)</label>
+              <input type="number" step="0.2" id="peerInvTurn" value="5.5" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="peerDE">D/E trung bình ngành (lần)</label>
+              <input type="number" step="0.1" id="peerDE" value="1.0" oninput="window.updateValuationAndPeer()" />
+            </div>
+          </div>
+          <div class="chart-wrap-sm">
+            <canvas id="peerChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Định giá DCF & So sánh Bội số</h3>
+          </div>
+          <div class="form-grid-2">
+            <div class="input-box">
+              <label for="valWacc">WACC - Chi phí vốn (%)</label>
+              <input type="number" step="0.5" id="valWacc" value="11" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="valTermG">Tăng trưởng dài hạn g (%)</label>
+              <input type="number" step="0.5" id="valTermG" value="3.5" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="valShares">Số lượng cổ phiếu (triệu CP)</label>
+              <input type="number" step="1" id="valShares" value="100" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="valMarketPrice">Giá thị trường hiện tại (nghìn đ/CP)</label>
+              <input type="number" step="0.5" id="valMarketPrice" value="25" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="valEvEbitda">EV/EBITDA ngành (lần)</label>
+              <input type="number" step="0.5" id="valEvEbitda" value="8.5" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="valPe">P/E ngành (lần)</label>
+              <input type="number" step="0.5" id="valPe" value="12" oninput="window.updateValuationAndPeer()" />
+            </div>
+            <div class="input-box">
+              <label for="valPb">P/B ngành (lần)</label>
+              <input type="number" step="0.1" id="valPb" value="1.8" oninput="window.updateValuationAndPeer()" />
+            </div>
+          </div>
+
+          <div id="valuationSummary" class="val-summary-grid"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Bảng độ nhạy định giá DCF (Giá mục tiêu: nghìn đồng/CP theo WACC &amp; g)</h3>
+        </div>
+        <div class="table-responsive">
+          <table id="sensitivityTable" class="data-table"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: BÁO CÁO QUẢN TRỊ & TRỢ LÝ AI -->
+    <section id="tab-ai" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Báo cáo Quản trị tự động &amp; Trợ lý AI</h2>
+          <p class="muted">Tự động sinh bản nháp báo cáo offline, copy prompt đã ghép số liệu sang Claude/ChatGPT/Gemini, hoặc gọi API trực tiếp.</p>
+        </div>
+      </div>
+
+      <!-- Khối 1: Sinh báo cáo offline -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📝 Sinh bản nháp Báo cáo Quản trị (Chạy ngay không cần API)</h3>
+          <div class="inline-controls">
+            <select id="reportTypeSelect">
+              <option value="bod">Báo cáo Ban Giám đốc (Điều hành)</option>
+              <option value="monthly">Báo cáo Tài chính Tháng / Quý</option>
+              <option value="agm">Báo cáo Đại hội đồng Cổ đông (ĐHCĐ)</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="window.generateOfflineReport()">✨ Tạo bản nháp</button>
+            <button class="btn btn-outline btn-sm" onclick="window.copyReportDraft()">📋 Copy</button>
+            <button class="btn btn-outline btn-sm" onclick="window.downloadReportMd()">⬇️ Tải .md</button>
+          </div>
+        </div>
+        <div id="reportStatus" class="inline-status"></div>
+        <textarea id="reportDraftArea" rows="12" class="code-textarea" placeholder="Bấm 'Tạo bản nháp' để hệ thống tự tổng hợp báo cáo từ số liệu hiện tại..."></textarea>
+      </div>
+
+      <!-- Khối 2: Kết nối AI API trực tiếp (tùy chọn) -->
+      <div class="card">
+        <div class="card-header">
+          <h3>⚡ Phân tích trực tiếp bằng AI API (Tùy chọn - Lưu key cục bộ trên máy bạn)</h3>
+        </div>
+        <div class="form-grid-3">
+          <div class="input-box">
+            <label for="aiProviderSelect">Nhà cung cấp AI</label>
+            <select id="aiProviderSelect" onchange="window.saveAiConfig()">
+              <option value="gemini">Google Gemini (gemini-2.5-flash)</option>
+              <option value="openai">OpenAI (gpt-4o-mini)</option>
+            </select>
+          </div>
+          <div class="input-box">
+            <label for="aiApiKeyInput">API Key cá nhân (không gửi đi đâu ngoài nhà cung cấp)</label>
+            <input type="password" id="aiApiKeyInput" placeholder="Dán API Key của bạn..." onchange="window.saveAiConfig()" />
+          </div>
+          <div class="input-box">
+            <label for="aiTaskSelect">Chủ đề hỏi AI</label>
+            <select id="aiTaskSelect">
+              <option value="variance">Giải thích biến động &amp; Nguyên nhân gốc rễ</option>
+              <option value="risks">Soát xét rủi ro &amp; Red Flags</option>
+              <option value="bod_report">Viết Báo cáo Ban Giám đốc chuyên sâu</option>
+              <option value="valuation">Đánh giá định giá &amp; So sánh ngành</option>
+              <option value="forecast">Đề xuất kịch bản Dự báo &amp; Dòng tiền</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-box" style="margin-top:10px;">
+          <label for="aiCustomQuestion">Câu hỏi bổ sung (tùy chọn)</label>
+          <input type="text" id="aiCustomQuestion" placeholder="Ví dụ: Đề xuất 3 hành động cụ thể để cải thiện dòng tiền kinh doanh trong quý tới..." />
+        </div>
+        <div class="action-row">
+          <button class="btn btn-primary" id="runAiBtn" onclick="window.runDirectAiAnalysis()">🚀 Chạy phân tích AI ngay</button>
+          <span id="aiCallStatus" class="inline-status"></span>
+        </div>
+        <div id="aiResponseBox" class="ai-output hidden"></div>
+      </div>
+
+      <!-- Khối 3: Thư viện Prompt gốc + Tự động ghép số liệu -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 Thư viện Prompt AI (Luôn có sẵn Mẫu gốc + Bản đã ghép số liệu doanh nghiệp)</h3>
+          <span class="muted">Dùng miễn phí bằng cách Copy dán sang Claude / ChatGPT / Gemini</span>
+        </div>
+        <div id="promptLibraryContainer" class="prompt-list"></div>
+      </div>
+    </section>
+
+    <!-- TAB 7: 5 MODULE NỀN TẢNG -->
+    <section id="tab-learning" class="tab-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Lộ trình 5 Module Nền tảng Đọc hiểu BCTC &amp; Kiểm chứng AI</h2>
+          <p class="muted">Tra cứu nhanh để biết con số nào hợp lý, chỉ số nào báo hiệu vấn đề và nên hỏi AI tiếp điều gì.</p>
+        </div>
+      </div>
+      <div id="learningModulesGrid" class="modules-grid"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>AI Phân Tích BCTC Cá Nhân v1.0 · Dữ liệu lưu cục bộ trên trình duyệt (localStorage) · Không cần cài đặt server</span>
+  </footer>
+
+  <script src="js/data_sample.js?v=1.0"></script>
+  <script src="js/finance_engine.js?v=1.0"></script>
+  <script src="js/ai_prompts.js?v=1.0"></script>
+  <script src="js/app.js?v=1.0"></script>
+</body>
+</html>
