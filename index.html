@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v6.8</title>
+  <title>AI Phân Tích BCTC Cá Nhân v6.9</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -802,6 +802,60 @@
       font-size: 11.5px; font-weight: 600; color: #34d399; margin-bottom: 8px; padding: 0 2px;
     }
     .master-upload-status.error { color: #f87171; }
+
+    /* FP&A Automated Planning Module (v6.9) */
+    .fpa-step-nav {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px;
+    }
+    .fpa-step-btn {
+      flex: 1; min-width: 185px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; text-align: left; transition: all 0.15s;
+      box-shadow: var(--shadow-sm);
+    }
+    .fpa-step-btn:hover { border-color: #93c5fd; transform: translateY(-1px); }
+    .fpa-step-btn.active {
+      background: linear-gradient(135deg, #0f172a, #1d4ed8);
+      color: #fff; border-color: var(--primary);
+      box-shadow: 0 6px 16px rgba(29, 78, 216, 0.28);
+    }
+    .fpa-step-pane { display: none; animation: fadeIn 0.2s ease; }
+    .fpa-step-pane.active { display: block; }
+    .fpa-slider-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px; margin-bottom: 16px;
+    }
+    .fpa-slider-box {
+      background: var(--surface-soft); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .fpa-slider-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 6px;
+    }
+    .fpa-slider-val {
+      color: var(--primary); font-variant-numeric: tabular-nums;
+      background: var(--primary-soft); padding: 2px 8px; border-radius: 99px; font-size: 12px;
+    }
+    .fpa-slider-box input[type="range"] {
+      width: 100%; accent-color: var(--primary); cursor: pointer;
+    }
+    .fpa-preset-row {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+    }
+    .fpa-driver-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px; margin-bottom: 16px;
+    }
+    .fpa-driver-card {
+      background: var(--surface-soft); border: 1px solid var(--border);
+      border-radius: 11px; padding: 13px 15px; border-left: 4px solid var(--primary);
+    }
+    .fpa-driver-card.good { border-left-color: var(--good); background: #f0fdf4; }
+    .fpa-driver-card.danger { border-left-color: var(--danger); background: #fef2f2; }
+    .fpa-driver-card.warn { border-left-color: var(--warn); background: #fffbeb; }
   </style>
 </head>
 <body>
@@ -811,7 +865,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.8</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.9</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -864,6 +918,9 @@
         </button>
         <button class="nav-item" data-tab="tab-learning" onclick="window.switchTab('tab-learning')">
           <span class="nav-icon">📚</span> 5 Module Nền tảng
+        </button>
+        <button class="nav-item" data-tab="tab-fpa" onclick="window.switchTab('tab-fpa')">
+          <span class="nav-icon">🎯</span> Mô hình FP&amp;A Tự động
         </button>
         <button class="nav-item" data-tab="tab-settings" onclick="window.switchTab('tab-settings')">
           <span class="nav-icon">⚙️</span> Cấu hình API Cá nhân
@@ -1623,6 +1680,179 @@
                 </div>
               </div>
               <div id="mod5SmartQuestions"></div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- TAB NEW: MÔ HÌNH FP&A TỰ ĐỘNG (4 BƯỚC PHÂN TÍCH & LẬP KẾ HOẠCH TÀI CHÍNH TƯƠNG LAI) -->
+        <section id="tab-fpa" class="tab-panel">
+          <div class="card" style="padding:16px 20px;margin-bottom:16px;background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);color:#fff;border:none;">
+            <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                  <span class="badge" style="background:rgba(255,255,255,0.18);color:#fff;">FP&amp;A Auto Engine</span>
+                  <span class="badge" id="fpaCompanyBadge" style="background:#10b981;color:#fff;">🏢 Doanh nghiệp</span>
+                </div>
+                <h3 style="font-size:17px;color:#fff;margin-bottom:3px;">🎯 Mô Hình Phân Tích &amp; Lập Kế Hoạch Tài Chính Tương Lai (FP&amp;A Tự Động)</h3>
+                <p id="fpaContextSub" style="font-size:12.5px;color:#cbd5e1;">Đầu não tài chính kết nối số liệu kế toán với vận hành thực tế · Tự động chạy đủ 4 bước FP&amp;A khi đổi công ty hoặc nạp BCTC mới.</p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.25);" onclick="window.copyFpaExecutiveBrief(this)">📋 Copy Báo cáo FP&amp;A</button>
+                <button class="btn btn-sm" style="background:#f59e0b;color:#0f172a;border-color:#f59e0b;font-weight:700;" onclick="window.sendFpaToAiChat()">🤖 Nhờ AI lập kế hoạch FP&amp;A</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Bước FP&A Navigation -->
+          <div class="fpa-step-nav">
+            <button class="fpa-step-btn active" id="fpaBtn-all" onclick="window.switchFpaStep('all')">
+              <span class="mod-num">⚡</span>
+              <div><div class="mod-tab-title">Xem trọn bộ 4 Bước</div><div class="mod-tab-sub">Chạy Auto toàn diện</div></div>
+            </button>
+            <button class="fpa-step-btn" id="fpaBtn-1" onclick="window.switchFpaStep('1')">
+              <span class="mod-num">1</span>
+              <div><div class="mod-tab-title">Chuẩn hóa Dữ liệu</div><div class="mod-tab-sub">Data Integrity · Ánh xạ ERP</div></div>
+            </button>
+            <button class="fpa-step-btn" id="fpaBtn-2" onclick="window.switchFpaStep('2')">
+              <span class="mod-num">2</span>
+              <div><div class="mod-tab-title">Phân tích Biến động</div><div class="mod-tab-sub">Variance · Có lợi / Bất lợi</div></div>
+            </button>
+            <button class="fpa-step-btn" id="fpaBtn-3" onclick="window.switchFpaStep('3')">
+              <span class="mod-num">3</span>
+              <div><div class="mod-tab-title">Yếu tố Thúc đẩy</div><div class="mod-tab-sub">Driver-based · Cầu LNST</div></div>
+            </button>
+            <button class="fpa-step-btn" id="fpaBtn-4" onclick="window.switchFpaStep('4')">
+              <span class="mod-num">4</span>
+              <div><div class="mod-tab-title">Kịch bản &amp; Đề xuất</div><div class="mod-tab-sub">Stress-test · Rolling 4Q</div></div>
+            </button>
+          </div>
+
+          <!-- BƯỚC 1: KIỂM CHỨNG & CHUẨN HÓA DỮ LIỆU (DATA INTEGRITY) -->
+          <div id="fpaPane-1" class="fpa-step-pane active">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>1️⃣ Kiểm Chứng &amp; Chuẩn Hóa Dữ Liệu (Data Integrity — Một Nguồn Sự Thật Duy Nhất)</h3>
+                  <span class="muted">Tự động làm sạch, kiểm tra chéo Kế toán vs Vận hành và ánh xạ khoản mục sang Báo cáo Quản trị FP&amp;A</span>
+                </div>
+                <span class="badge badge-good" id="fpaIntegrityScoreBadge">Độ tin cậy: —%</span>
+              </div>
+              <div id="fpaStep1Checks" class="step-audit-grid"></div>
+              <h4 style="font-size:13.5px;margin:10px 0 8px;color:var(--text);">🔄 Bảng Ánh Xạ Tự Động: BCTC Kế Toán (VAS) → Chỉ Tiêu Quản Trị FP&amp;A</h4>
+              <div class="table-responsive">
+                <table id="fpaMappingTable" class="data-table"></table>
+              </div>
+            </div>
+          </div>
+
+          <!-- BƯỚC 2: PHÂN TÍCH BIẾN ĐỘNG (VARIANCE ANALYSIS) -->
+          <div id="fpaPane-2" class="fpa-step-pane active">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>2️⃣ Phân Tích Biến Động Chuyên Sâu (Variance Analysis — Thực Tế vs Kế Hoạch &amp; Cùng Kỳ)</h3>
+                  <span class="muted">Tự động phân loại biến động Có lợi (F) / Bất lợi (U) và tách bạch nguyên nhân quản trị nội bộ vs tác động thị trường</span>
+                </div>
+                <span class="badge">Auto Variance</span>
+              </div>
+              <div class="two-col-grid" style="margin-bottom:14px;">
+                <div class="chart-wrap">
+                  <canvas id="fpaVarianceChart"></canvas>
+                </div>
+                <div>
+                  <h4 style="font-size:13.5px;margin-bottom:10px;color:var(--text);">🔍 Giải mã Nguyên nhân Quản trị Nội bộ vs Tác động Thị trường</h4>
+                  <div id="fpaVarianceInsights" class="alerts-list"></div>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table id="fpaVarianceTable" class="data-table"></table>
+              </div>
+            </div>
+          </div>
+
+          <!-- BƯỚC 3: XÁC ĐỊNH YẾU TỐ THÚC ĐẨY KINH DOANH (DRIVER-BASED ANALYSIS) -->
+          <div id="fpaPane-3" class="fpa-step-pane active">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>3️⃣ Phân Tích Yếu Tố Thúc Đẩy Kinh Doanh (Driver-based Analysis)</h3>
+                  <span class="muted">Bóc tách con số tài chính tổng quát thành các động lực vận hành cụ thể để báo cáo CEO bộ phận nào làm tốt / cần cải thiện</span>
+                </div>
+                <span class="badge badge-warn">Profit Driver Bridge</span>
+              </div>
+              <div id="fpaDriverCards" class="fpa-driver-grid"></div>
+              <div class="two-col-grid">
+                <div>
+                  <h4 style="font-size:13.5px;margin-bottom:8px;color:var(--text);">📊 Cầu Bóc Tách Động Lực Biến Động Lợi Nhuận Sau Thuế (Tỷ đồng)</h4>
+                  <div class="chart-wrap">
+                    <canvas id="fpaDriverBridgeChart"></canvas>
+                  </div>
+                </div>
+                <div>
+                  <h4 style="font-size:13.5px;margin-bottom:8px;color:var(--text);">🧠 Chẩn đoán Trách nhiệm Bộ phận (Kinh doanh · Chuỗi cung ứng · Marketing · Tài chính)</h4>
+                  <div id="fpaDeptDiagnosis" class="alerts-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BƯỚC 4: XÂY DỰNG KỊCH BẢN & ĐỀ XUẤT HÀNH ĐỘNG (SCENARIO PLANNING & RECOMMENDATION) -->
+          <div id="fpaPane-4" class="fpa-step-pane active">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>4️⃣ Xây Dựng Kịch Bản, Stress-Test &amp; Đề Xuất Hành Động (Scenario Planning &amp; Rolling Forecast)</h3>
+                  <span class="muted">Kéo thanh trượt bên dưới để mô phỏng tức thời tác động (VD: Giá nguyên liệu tăng +5%, cắt giảm Marketing -5%...) lên LNST &amp; FCF</span>
+                </div>
+                <button class="btn btn-sm" onclick="window.resetFpaSliders()">🔄 Đặt lại kịch bản gốc</button>
+              </div>
+
+              <div class="fpa-preset-row">
+                <button class="tpl-pill" onclick="window.applyFpaPreset(0, 5, 0, 0)">🧪 Stress-test: Giá nguyên liệu +5%</button>
+                <button class="tpl-pill" onclick="window.applyFpaPreset(-10, 3, 0, 1.5)">🌪️ Kịch bản Khủng hoảng (DT -10%, NVL +3%)</button>
+                <button class="tpl-pill" onclick="window.applyFpaPreset(12, -2, -5, 0)">🚀 Tối ưu Tăng trưởng (DT +12%, SG&amp;A -5%)</button>
+                <button class="tpl-pill" onclick="window.applyFpaPreset(0, 0, -10, 0)">✂️ Thắt chặt Chi phí (Cắt BH&amp;QLDN -10%)</button>
+              </div>
+
+              <div class="fpa-slider-grid">
+                <div class="fpa-slider-box">
+                  <div class="fpa-slider-head"><span>Biến động Doanh thu</span><span class="fpa-slider-val" id="fpaValRev">0%</span></div>
+                  <input type="range" id="fpaShockRev" min="-30" max="40" step="1" value="0" oninput="window.updateFpaScenario()" />
+                </div>
+                <div class="fpa-slider-box">
+                  <div class="fpa-slider-head"><span>Giá nguyên liệu / Giá vốn (COGS)</span><span class="fpa-slider-val" id="fpaValCogs">+5%</span></div>
+                  <input type="range" id="fpaShockCogs" min="-15" max="20" step="0.5" value="5" oninput="window.updateFpaScenario()" />
+                </div>
+                <div class="fpa-slider-box">
+                  <div class="fpa-slider-head"><span>Chi phí Marketing / BH &amp; QLDN</span><span class="fpa-slider-val" id="fpaValSga">0%</span></div>
+                  <input type="range" id="fpaShockSga" min="-25" max="25" step="1" value="0" oninput="window.updateFpaScenario()" />
+                </div>
+                <div class="fpa-slider-box">
+                  <div class="fpa-slider-head"><span>Biến động Lãi suất vay (+/- %)</span><span class="fpa-slider-val" id="fpaValRate">0%</span></div>
+                  <input type="range" id="fpaShockRate" min="-3" max="6" step="0.5" value="0" oninput="window.updateFpaScenario()" />
+                </div>
+              </div>
+
+              <div id="fpaStressSummary" class="mini-stat-grid"></div>
+
+              <div class="two-col-grid" style="margin-bottom:16px;">
+                <div>
+                  <h4 style="font-size:13.5px;margin-bottom:8px;color:var(--text);">📈 So sánh 3 Kịch bản chuẩn &amp; Kịch bản Mô phỏng (Tỷ đồng)</h4>
+                  <div class="chart-wrap">
+                    <canvas id="fpaScenarioChart"></canvas>
+                  </div>
+                </div>
+                <div>
+                  <h4 style="font-size:13.5px;margin-bottom:8px;color:var(--text);">📅 Kế hoạch Cuốn Chi tiết 4 Quý Tới (Rolling Forecast 12 Tháng)</h4>
+                  <div class="table-responsive">
+                    <table id="fpaRollingTable" class="data-table"></table>
+                  </div>
+                </div>
+              </div>
+
+              <h4 style="font-size:14px;margin:10px 0 8px;color:var(--text);">🎯 Khuyến Nghị Hành Động Cụ Thể Cho CEO / Ban Giám Đốc (Tự Động Định Lượng)</h4>
+              <div id="fpaRecommendations" class="alerts-list"></div>
             </div>
           </div>
         </section>
@@ -2404,6 +2634,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         "tab-doc-ai": ["Đọc File BCTC (PDF/Word/Excel/Ảnh) & Chat AI", "Tải 1 hoặc nhiều file BCTC để tóm tắt, so sánh, tìm rủi ro và xuất mọi định dạng"],
         "tab-ai": ["Báo cáo Quản trị & Trợ lý AI", "Tạo báo cáo offline, copy prompt kèm số liệu hoặc gọi AI API trực tiếp"],
         "tab-learning": ["5 Module Phân Tích BCTC Trực Quan Tự Động", "Tự động vẽ biểu đồ, chẩn đoán DuPont, kiểm chứng số liệu & sinh câu hỏi AI"],
+        "tab-fpa": ["Mô Hình FP&A Tự Động (4 Bước Chuyên Gia)", "Kiểm chứng dữ liệu · Biến động Variance · Yếu tố thúc đẩy Driver · Kịch bản & Đề xuất CEO"],
         "tab-settings": ["Cấu Hình API Cá Nhân", "Chọn 1 trong 11 nền tảng AI phổ biến & lưu API Key cục bộ trên trình duyệt"]
       };
 
@@ -2417,7 +2648,8 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         statementType: "is",
         analysisMode: "abs",
         activeLearningMod: 1,
-        charts: { trend: null, waterfall: null, variance: null, forecast: null, peer: null, mod1: null, mod2Funnel: null, mod2Cash: null, mod3Radar: null, tpl2Cash: null, tpl5Fc: null }
+        fpaStep: "all",
+        charts: { trend: null, waterfall: null, variance: null, forecast: null, peer: null, mod1: null, mod2Funnel: null, mod2Cash: null, mod3Radar: null, tpl2Cash: null, tpl5Fc: null, fpaVar: null, fpaDriver: null, fpaScen: null }
       };
 
       const deepClone = o => JSON.parse(JSON.stringify(o));
@@ -2606,6 +2838,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         renderPromptLibrary();
         renderLearning();
         renderDocTemplates();
+        renderFpaModel();
       }
 
       function renderDashboard() {
@@ -3239,6 +3472,410 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         showStatus("✅ Đã chuyển câu hỏi sang khung Chat AI! Bấm '🚀 Hỏi AI' hoặc '📋 Copy kèm file'.");
       };
 
+
+      // ================= 4B. FP&A AUTOMATED ENGINE (4 STEPS) (v6.9) =================
+      function renderFpaModel() {
+        if (!state.data || !state.derived) return;
+        const d = state.data, drv = state.derived;
+        const n = d.periods.length;
+        const idx = Number(document.getElementById("dashboardPeriodSelect")?.value || (n - 1));
+        const prev = idx - 1;
+        const pLabel = d.periods[idx] || "";
+        const prevLabel = prev >= 0 ? d.periods[prev] : "Kỳ cơ sở";
+        const r = drv.ratios[idx];
+        const compName = d.companyName || "Doanh nghiệp của tôi";
+
+        const cBadge = document.getElementById("fpaCompanyBadge");
+        if (cBadge) cBadge.textContent = "🏢 " + compName;
+        const cSub = document.getElementById("fpaContextSub");
+        if (cSub) cSub.textContent = `Đang chạy tự động FP&A cho ${compName} · Kỳ trọng tâm: ${pLabel} (ĐVT: ${d.unit}) · Nguồn dữ liệu đồng bộ 100% với BCTC.`;
+
+        // ===== BƯỚC 1: KIỂM CHỨNG & CHUẨN HÓA DỮ LIỆU (DATA INTEGRITY) =====
+        let bsOkCount = 0, revOkCount = 0;
+        for (let i = 0; i < n; i++) {
+          const diff = Math.abs(drv.totalAssets[i] - (drv.totalLiabilities[i] + d.bs.equity[i]));
+          if (diff <= Math.max(1, drv.totalAssets[i] * 0.005)) bsOkCount++;
+          if ((d.is.revenue[i] || 0) > 0) revOkCount++;
+        }
+        const b = d.budgetLatest || {};
+        const hasBudget = (Number(b.revenue) || 0) > 0 && (Number(b.netProfit) || 0) !== 0;
+        const bsPct = Math.round((bsOkCount / Math.max(1, n)) * 100);
+        const revPct = Math.round((revOkCount / Math.max(1, n)) * 100);
+        const effTax = drv.ebt[idx] > 0 ? F.safeDiv(d.is.taxExpense[idx], drv.ebt[idx]) : 0;
+        const taxOk = drv.ebt[idx] <= 0 || (effTax >= 0.05 && effTax <= 0.28);
+        const integrityScore = Math.round(bsPct * 0.35 + revPct * 0.35 + (hasBudget ? 15 : 5) + (taxOk ? 15 : 8));
+
+        const scoreBadge = document.getElementById("fpaIntegrityScoreBadge");
+        if (scoreBadge) {
+          scoreBadge.textContent = `Độ tin cậy dữ liệu: ${integrityScore}%`;
+          scoreBadge.className = "badge " + (integrityScore >= 85 ? "badge-good" : integrityScore >= 65 ? "badge-warn" : "badge-danger");
+        }
+
+        const c1Cls = bsOkCount === n ? "good" : "warn";
+        const c2Cls = revOkCount === n ? "good" : "danger";
+        const c3Cls = hasBudget ? "good" : "warn";
+        const c4Cls = taxOk ? "good" : "warn";
+
+        document.getElementById("fpaStep1Checks").innerHTML = `
+          <div class="step-audit-card ${c1Cls}">
+            <div class="step-audit-head"><span>1. Cân bằng Kế toán (TS = Nợ + VCSH)</span><span class="badge badge-${c1Cls}">${bsOkCount}/${n} kỳ khớp</span></div>
+            <div class="muted">Kỳ ${pLabel}: Tổng TS <strong>${F.fmtNum(drv.totalAssets[idx])}</strong> tỷ vs Nguồn vốn <strong>${F.fmtNum(drv.totalLiabilities[idx] + d.bs.equity[idx])}</strong> tỷ.</div>
+          </div>
+          <div class="step-audit-card ${c2Cls}">
+            <div class="step-audit-head"><span>2. Chuỗi thời gian &amp; Độ đầy đủ</span><span class="badge badge-${c2Cls}">${revOkCount}/${n} kỳ đủ số</span></div>
+            <div class="muted">Đơn vị đã chuẩn hóa về <strong>${d.unit}</strong>; chi phí giá vốn, SG&amp;A, lãi vay chuẩn hóa dấu dương.</div>
+          </div>
+          <div class="step-audit-card ${c3Cls}">
+            <div class="step-audit-head"><span>3. Dữ liệu Kế hoạch / Ngân sách</span><span class="badge badge-${c3Cls}">${hasBudget ? "Sẵn sàng" : "Thiếu KH"}</span></div>
+            <div class="muted">${hasBudget ? `KH Doanh thu: <strong>${F.fmtNum(b.revenue)}</strong> tỷ · KH LNST: <strong>${F.fmtNum(b.netProfit)}</strong> tỷ.` : "Chưa nhập ngân sách kỳ gần nhất (vào tab BCTC để bổ sung)."}</div>
+          </div>
+          <div class="step-audit-card ${c4Cls}">
+            <div class="step-audit-head"><span>4. Tính hợp lý Kế toán - Thuế</span><span class="badge badge-${c4Cls}">Thuế suất ${F.fmtPct(effTax)}</span></div>
+            <div class="muted">Đối chiếu OCF/LNST đạt <strong>${drv.netProfit[idx] > 0 ? F.fmtPct(F.safeDiv(d.cf.ocf[idx], drv.netProfit[idx])) : "N/A"}</strong> — một nguồn sự thật duy nhất.</div>
+          </div>
+        `;
+
+        const mapRows = [
+          ["Doanh thu thuần (Mã 10)", "Top-line Revenue", d.is.revenue[idx], "100,0%", "Động lực quy mô thị trường"],
+          ["Giá vốn hàng bán (Mã 11)", "Direct Cost / COGS", d.is.cogs[idx], F.fmtPct(F.safeDiv(d.is.cogs[idx], d.is.revenue[idx])), "Kiểm soát chuỗi cung ứng & NVL"],
+          ["Chi phí BH & QLDN (Mã 25+26)", "Operating Expenses (OPEX)", d.is.sga[idx], F.fmtPct(F.safeDiv(d.is.sga[idx], d.is.revenue[idx])), "Hiệu suất Marketing & Bộ máy"],
+          ["EBITDA (EBIT + Khấu hao)", "Core Operating Cash Profit", drv.ebitda[idx], F.fmtPct(r.ebitdaMargin), "Khả năng tạo tiền cốt lõi"],
+          ["Vốn lưu động ròng (NWC)", "Working Capital Efficiency", drv.nwc[idx], F.fmtPct(F.safeDiv(drv.nwc[idx], d.is.revenue[idx])), "Vốn bị giam ở Phải thu & Tồn kho"],
+          ["Dòng tiền tự do (FCF)", "Free Cash Flow", drv.fcf[idx], F.fmtPct(F.safeDiv(drv.fcf[idx], d.is.revenue[idx])), "Tiền dư trả cổ tức / Tái đầu tư"]
+        ];
+        document.getElementById("fpaMappingTable").innerHTML = `
+          <thead><tr><th>Khoản mục Kế toán (VAS / ERP)</th><th>Nhóm Quản trị FP&amp;A</th><th>Giá trị (${pLabel})</th><th>% / Doanh thu</th><th>Ý nghĩa Điều hành</th></tr></thead>
+          <tbody>${mapRows.map(mr => `<tr><td><strong>${mr[0]}</strong></td><td><span class="badge">${mr[1]}</span></td><td><strong>${F.fmtNum(mr[2])} tỷ</strong></td><td>${mr[3]}</td><td style="text-align:left;color:var(--text-soft);">${mr[4]}</td></tr>`).join("")}</tbody>
+        `;
+
+        // ===== BƯỚC 2: PHÂN TÍCH BIẾN ĐỘNG (VARIANCE ANALYSIS) =====
+        const revAct = d.is.revenue[idx], gpAct = drv.grossProfit[idx], ebitdaAct = drv.ebitda[idx], ebtAct = drv.ebt[idx], npAct = drv.netProfit[idx], ocfAct = d.cf.ocf[idx];
+        const cogsAct = d.is.cogs[idx], sgaAct = d.is.sga[idx];
+        const bRev = Number(b.revenue) || revAct;
+        const bGp = Number(b.grossProfit) || gpAct;
+        const bCogs = Math.max(0, bRev - bGp);
+        const bEbitda = Number(b.ebitda) || ebitdaAct;
+        const bEbt = Number(b.ebt) || ebtAct;
+        const bNp = Number(b.netProfit) || npAct;
+        const bOcf = Number(b.ocf) || ocfAct;
+
+        const varItems = [
+          { lbl: "Doanh thu thuần", act: revAct, bud: bRev, prevV: prev >= 0 ? d.is.revenue[prev] : null, isCost: false, driverType: "Thị trường & Bán hàng" },
+          { lbl: "Giá vốn hàng bán", act: cogsAct, bud: bCogs, prevV: prev >= 0 ? d.is.cogs[prev] : null, isCost: true, driverType: "Nội tại / Giá NVL" },
+          { lbl: "Lợi nhuận gộp", act: gpAct, bud: bGp, prevV: prev >= 0 ? drv.grossProfit[prev] : null, isCost: false, driverType: "Giá bán & Giá vốn" },
+          { lbl: "EBITDA", act: ebitdaAct, bud: bEbitda, prevV: prev >= 0 ? drv.ebitda[prev] : null, isCost: false, driverType: "Hiệu quả Vận hành" },
+          { lbl: "Lợi nhuận trước thuế", act: ebtAct, bud: bEbt, prevV: prev >= 0 ? drv.ebt[prev] : null, isCost: false, driverType: "HĐKD + Tài chính" },
+          { lbl: "Lợi nhuận sau thuế", act: npAct, bud: bNp, prevV: prev >= 0 ? drv.netProfit[prev] : null, isCost: false, driverType: "Kết quả cuối cùng" },
+          { lbl: "Dòng tiền KD (OCF)", act: ocfAct, bud: bOcf, prevV: prev >= 0 ? d.cf.ocf[prev] : null, isCost: false, driverType: "Quản trị Công nợ & Kho" }
+        ];
+
+        let varHtml = `<thead><tr><th>Chỉ tiêu (tỷ)</th><th>Thực tế (${pLabel})</th><th>Kế hoạch</th><th>Chênh lệch KH</th><th>% vs KH</th><th>Trạng thái</th><th>YoY (${prevLabel})</th><th>Nguồn tác động</th></tr></thead><tbody>`;
+        varItems.forEach(it => {
+          const diff = it.act - it.bud;
+          const pct = F.safeDiv(diff, Math.abs(it.bud));
+          const isFav = it.isCost ? (diff <= 0) : (diff >= 0);
+          const yoy = it.prevV !== null && Math.abs(it.prevV) > 1e-6 ? (it.act - it.prevV) / Math.abs(it.prevV) : null;
+          varHtml += `<tr>
+            <td><strong>${it.lbl}</strong></td>
+            <td><strong>${F.fmtNum(it.act)}</strong></td>
+            <td>${F.fmtNum(it.bud)}</td>
+            <td class="${isFav ? "num-pos" : "num-neg"}">${diff >= 0 ? "+" : ""}${F.fmtNum(diff)}</td>
+            <td class="${isFav ? "num-pos" : "num-neg"}">${pct >= 0 ? "+" : ""}${F.fmtPct(pct)}</td>
+            <td><span class="badge ${isFav ? "badge-good" : "badge-danger"}">${isFav ? "Có lợi (F)" : "Bất lợi (U)"}</span></td>
+            <td class="${yoy === null ? "muted" : ((it.isCost ? yoy <= 0 : yoy >= 0) ? "num-pos" : "num-neg")}">${yoy === null ? "—" : (yoy >= 0 ? "+" : "") + F.fmtPct(yoy)}</td>
+            <td style="text-align:left;font-size:12px;color:var(--text-soft);">${it.driverType}</td>
+          </tr>`;
+        });
+        document.getElementById("fpaVarianceTable").innerHTML = varHtml + `</tbody>`;
+
+        if (typeof Chart !== "undefined") {
+          destroyChart("fpaVar");
+          const chartItems = varItems.filter(x => x.lbl !== "Giá vốn hàng bán");
+          state.charts.fpaVar = new Chart(document.getElementById("fpaVarianceChart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: chartItems.map(x => x.lbl.replace("Lợi nhuận ", "LN ").replace("Dòng tiền KD ", "")),
+              datasets: [{
+                label: "Chênh lệch Thực tế vs Kế hoạch (tỷ đồng)",
+                data: chartItems.map(x => +(x.act - x.bud).toFixed(1)),
+                backgroundColor: chartItems.map(x => (x.act - x.bud) >= 0 ? "#059669" : "#dc2626"),
+                borderRadius: 6
+              }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: "Chênh lệch (tỷ)" } } } }
+          });
+        }
+
+        const revVar = revAct - bRev, npVar = npAct - bNp, ocfVar = ocfAct - bOcf;
+        const varInsights = [
+          {
+            level: revVar >= 0 ? "good" : "warn",
+            title: revVar >= 0 ? `✅ Tác động Thị trường / Bán hàng TÍCH CỰC (+${F.fmtNum(revVar)} tỷ vs KH)` : `⚠️ Hụt doanh thu so với Kế hoạch (${F.fmtNum(revVar)} tỷ | ${F.fmtPct(F.safeDiv(revVar, bRev))})`,
+            desc: revVar >= 0 ? "Sức cầu thị trường và đội ngũ kinh doanh vượt mục tiêu đề ra." : "Cần kiểm tra sức mua thị trường, độ phủ kênh phân phối hoặc chính sách giá bán."
+          },
+          {
+            level: (npVar >= 0 && revVar < 0) || npVar >= 0 ? "good" : "danger",
+            title: npVar >= 0 ? `✅ Năng lực Quản trị Nội bộ TỐT (LNST vượt KH +${F.fmtNum(npVar)} tỷ)` : `🚨 Biên lợi nhuận / Chi phí vượt ngưỡng (LNST thấp hơn KH ${F.fmtNum(npVar)} tỷ)`,
+            desc: (npVar >= 0 && revVar < 0) ? "Dù doanh thu chưa chạm kế hoạch nhưng nỗ lực tối ưu giá vốn và chi phí nội bộ đã giúp lợi nhuận vượt đích." : (npVar >= 0 ? "Doanh nghiệp kiểm soát đồng bộ cả doanh thu lẫn định phí." : "Cần rà soát ngay giá vốn hàng bán và tỷ lệ chi phí BH & QLDN trên doanh thu.")
+          },
+          {
+            level: ocfVar >= 0 ? "good" : "danger",
+            title: ocfVar >= 0 ? `✅ Kỷ luật Dòng tiền ĐẠT CHUẨN (OCF vượt KH +${F.fmtNum(ocfVar)} tỷ)` : `🚨 Dòng tiền thực hụt kế hoạch (${F.fmtNum(ocfVar)} tỷ)`,
+            desc: `Tiền từ kinh doanh đạt ${F.fmtNum(ocfAct)} tỷ vs kế hoạch ${F.fmtNum(bOcf)} tỷ. Kiểm tra ngay vòng quay công nợ (DSO: ${F.fmtNum(r.dso, 0)} ngày) và tồn kho (${F.fmtNum(r.inventoryTurnover, 2)} vòng).`
+          }
+        ];
+        document.getElementById("fpaVarianceInsights").innerHTML = varInsights.map(a => `
+          <div class="alert-item ${a.level}"><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div></div>
+        `).join("");
+
+        // ===== BƯỚC 3: PHÂN TÍCH YẾU TỐ THÚC ĐẨY (DRIVER-BASED ANALYSIS) =====
+        const sgaPct = F.safeDiv(sgaAct, revAct);
+        const cashConv = drv.ebitda[idx] > 0 ? F.safeDiv(ocfAct, drv.ebitda[idx]) : 0;
+        const drivers = [
+          { lbl: "Biên LN Gộp (Giá bán & NVL)", val: F.fmtPct(r.grossMargin), sub: prev >= 0 ? `${(r.grossMargin - drv.ratios[prev].grossMargin) >= 0 ? "▲ +" : "▼ "}${F.fmtNum((r.grossMargin - drv.ratios[prev].grossMargin) * 100, 1)}pp vs ${prevLabel}` : "Kỳ cơ sở", tone: r.grossMargin >= 0.25 ? "good" : r.grossMargin >= 0.15 ? "warn" : "danger" },
+          { lbl: "Tỷ lệ OPEX / Doanh thu", val: F.fmtPct(sgaPct), sub: prev >= 0 ? `${(sgaPct - F.safeDiv(d.is.sga[prev], d.is.revenue[prev])) <= 0 ? "✅ Tiết giảm " : "⚠️ Tăng "}${F.fmtNum(Math.abs(sgaPct - F.safeDiv(d.is.sga[prev], d.is.revenue[prev])) * 100, 1)}pp` : "Kỳ cơ sở", tone: sgaPct <= 0.18 ? "good" : sgaPct <= 0.25 ? "warn" : "danger" },
+          { lbl: "Vòng quay Tồn kho", val: `${F.fmtNum(r.inventoryTurnover, 2)} vòng`, sub: `~${F.fmtNum(F.safeDiv(365, r.inventoryTurnover), 0)} ngày lưu kho (DIO)`, tone: r.inventoryTurnover >= 4.5 ? "good" : r.inventoryTurnover >= 2.5 ? "warn" : "danger" },
+          { lbl: "Số ngày Thu tiền (DSO)", val: `${F.fmtNum(r.dso, 0)} ngày`, sub: `Phải thu: ${F.fmtNum(d.bs.receivables[idx])} tỷ`, tone: r.dso <= 55 ? "good" : r.dso <= 85 ? "warn" : "danger" },
+          { lbl: "Chuyển hóa tiền (OCF/EBITDA)", val: F.fmtPct(cashConv), sub: cashConv >= 0.7 ? "Chuyển thành tiền tốt" : "Tiền bị giam ở NWC", tone: cashConv >= 0.7 ? "good" : cashConv >= 0.4 ? "warn" : "danger" }
+        ];
+        document.getElementById("fpaDriverCards").innerHTML = drivers.map(dr => `
+          <div class="fpa-driver-card ${dr.tone}">
+            <div class="mini-stat-lbl">${dr.lbl}</div>
+            <div class="mini-stat-val">${dr.val}</div>
+            <div class="mini-stat-sub">${dr.sub}</div>
+          </div>
+        `).join("");
+
+        // Profit Driver Bridge (Prev NP -> Current NP)
+        let npPrev = prev >= 0 ? drv.netProfit[prev] : drv.netProfit[idx];
+        let volDriver = 0, marginDriver = 0, sgaDriver = 0, finTaxDriver = 0;
+        if (prev >= 0) {
+          const gmPrev = drv.ratios[prev].grossMargin;
+          volDriver = (revAct - d.is.revenue[prev]) * gmPrev;
+          marginDriver = revAct * (r.grossMargin - gmPrev);
+          sgaDriver = -(sgaAct - d.is.sga[prev]);
+          finTaxDriver = (npAct - npPrev) - (volDriver + marginDriver + sgaDriver);
+        }
+
+        if (typeof Chart !== "undefined") {
+          destroyChart("fpaDriver");
+          state.charts.fpaDriver = new Chart(document.getElementById("fpaDriverBridgeChart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: [`LNST ${prevLabel}`, "Quy mô DT", "Biên Gộp/NVL", "Định phí SG&A", "TC & Thuế", `LNST ${pLabel}`],
+              datasets: [{
+                label: "Tác động lên LNST (tỷ đồng)",
+                data: [npPrev, volDriver, marginDriver, sgaDriver, finTaxDriver, npAct].map(v => +v.toFixed(1)),
+                backgroundColor: [
+                  "#64748b",
+                  volDriver >= 0 ? "#059669" : "#dc2626",
+                  marginDriver >= 0 ? "#059669" : "#dc2626",
+                  sgaDriver >= 0 ? "#059669" : "#dc2626",
+                  finTaxDriver >= 0 ? "#0ea5e9" : "#f59e0b",
+                  "#2563eb"
+                ],
+                borderRadius: 6
+              }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: "Tỷ đồng" } } } }
+          });
+        }
+
+        const deptNotes = [
+          {
+            level: volDriver >= 0 ? "good" : "warn",
+            title: `🏢 Khối Kinh doanh & Bán hàng: ${volDriver >= 0 ? "Tạo thêm +" + F.fmtNum(volDriver) + " tỷ LN gộp" : "Làm giảm " + F.fmtNum(volDriver) + " tỷ LN gộp"}`,
+            desc: prev >= 0 ? `Doanh thu biến động từ ${F.fmtNum(d.is.revenue[prev])} tỷ → ${F.fmtNum(revAct)} tỷ.` : "Cần thêm kỳ so sánh để đo động lực tăng trưởng quy mô."
+          },
+          {
+            level: marginDriver >= 0 ? "good" : "danger",
+            title: `🏭 Khối Sản xuất & Chuỗi cung ứng (Giá vốn): ${marginDriver >= 0 ? "Cải thiện +" + F.fmtNum(marginDriver) + " tỷ" : "Bào mòn " + F.fmtNum(marginDriver) + " tỷ"}`,
+            desc: `Biên gộp hiện đạt ${F.fmtPct(r.grossMargin)}. ${marginDriver < 0 ? "Cần rà soát lại giá nguyên liệu đầu vào và định mức sản xuất." : "Hiệu quả tối ưu giá vốn và cơ cấu sản phẩm cao cấp đang phát huy tốt."}`
+          },
+          {
+            level: sgaDriver >= 0 ? "good" : "warn",
+            title: `📣 Khối Marketing & Vận hành (SG&A): ${sgaDriver >= 0 ? "Tiết kiệm +" + F.fmtNum(sgaDriver) + " tỷ" : "Tăng chi " + F.fmtNum(Math.abs(sgaDriver)) + " tỷ"}`,
+            desc: `Tỷ trọng SG&A chiếm ${F.fmtPct(sgaPct)} doanh thu (${F.fmtNum(sgaAct)} tỷ).`
+          },
+          {
+            level: finTaxDriver >= 0 ? "good" : "warn",
+            title: `💰 Khối Tài chính & Thuế: Tác động ròng ${finTaxDriver >= 0 ? "+" : ""}${F.fmtNum(finTaxDriver)} tỷ`,
+            desc: `Thu nhập TC ${F.fmtNum(d.is.finIncome[idx])} tỷ · Lãi vay ${F.fmtNum(d.is.interestExpense[idx])} tỷ · Thuế TNDN ${F.fmtNum(d.is.taxExpense[idx])} tỷ.`
+          }
+        ];
+        document.getElementById("fpaDeptDiagnosis").innerHTML = deptNotes.map(n => `
+          <div class="alert-item ${n.level}"><div class="alert-title">${n.title}</div><div class="alert-desc">${n.desc}</div></div>
+        `).join("");
+
+        // ===== BƯỚC 4: XÂY DỰNG KỊCH BẢN & ĐỀ XUẤT (SCENARIO PLANNING) =====
+        updateFpaScenario();
+      }
+
+      function updateFpaScenario() {
+        if (!state.data || !state.derived) return;
+        const d = state.data, drv = state.derived;
+        const n = d.periods.length;
+        const idx = Number(document.getElementById("dashboardPeriodSelect")?.value || (n - 1));
+        const rev0 = d.is.revenue[idx] || 1, cogs0 = d.is.cogs[idx] || 0, sga0 = d.is.sga[idx] || 0;
+        const dep0 = d.is.depreciation[idx] || 0, fin0 = d.is.finIncome[idx] || 0, int0 = d.is.interestExpense[idx] || 0;
+        const oth0 = d.is.otherProfit[idx] || 0, debt0 = drv.totalDebt[idx] || 0, capex0 = d.cf.capex[idx] || 0;
+        const taxRate = drv.ebt[idx] > 0 ? Math.min(0.25, Math.max(0.05, F.safeDiv(d.is.taxExpense[idx], drv.ebt[idx]))) : 0.2;
+
+        const shRev = Number(document.getElementById("fpaShockRev")?.value || 0);
+        const shCogs = Number(document.getElementById("fpaShockCogs")?.value || 0);
+        const shSga = Number(document.getElementById("fpaShockSga")?.value || 0);
+        const shRate = Number(document.getElementById("fpaShockRate")?.value || 0);
+
+        const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = (v > 0 ? "+" : "") + v + "%"; };
+        setTxt("fpaValRev", shRev); setTxt("fpaValCogs", shCogs); setTxt("fpaValSga", shSga); setTxt("fpaValRate", shRate);
+
+        function simScenario(gRev, gCogsPrice, gSga, dRate) {
+          const rev = rev0 * (1 + gRev / 100);
+          // COGS scales with revenue volume AND raw material price shock
+          const cogs = cogs0 * (1 + gRev / 100) * (1 + gCogsPrice / 100);
+          const sga = sga0 * (1 + gSga / 100);
+          const gp = rev - cogs;
+          const ebit = gp - sga;
+          const ebitda = ebit + dep0;
+          const interest = Math.max(0, int0 + debt0 * (dRate / 100));
+          const ebt = ebit + fin0 - interest + oth0;
+          const tax = ebt > 0 ? ebt * taxRate : 0;
+          const np = ebt - tax;
+          const fcf = ebit * (1 - taxRate) + dep0 - capex0;
+          return { rev, gp, ebitda, np, fcf };
+        }
+
+        const base = simScenario(0, 0, 0, 0);
+        const cons = simScenario(-8, 4, 2, 1.5);
+        const opti = simScenario(12, -2, -3, -0.5);
+        const custom = simScenario(shRev, shCogs, shSga, shRate);
+
+        const dNp = custom.np - base.np;
+        const dEbitda = custom.ebitda - base.ebitda;
+        const dFcf = custom.fcf - base.fcf;
+
+        document.getElementById("fpaStressSummary").innerHTML = `
+          <div class="mini-stat"><div class="mini-stat-lbl">Doanh thu Mô phỏng</div><div class="mini-stat-val">${F.fmtNum(custom.rev)} tỷ</div><div class="mini-stat-sub">Gốc: ${F.fmtNum(base.rev)} tỷ (${shRev >= 0 ? "+" : ""}${shRev}%)</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">EBITDA Mô phỏng</div><div class="mini-stat-val" style="color:${dEbitda >= 0 ? "#059669" : "#dc2626"}">${F.fmtNum(custom.ebitda)} tỷ</div><div class="mini-stat-sub">${dEbitda >= 0 ? "▲ +" : "▼ "}${F.fmtNum(dEbitda)} tỷ vs gốc</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">LNST Mô phỏng</div><div class="mini-stat-val" style="color:${dNp >= 0 ? "#059669" : "#dc2626"}">${F.fmtNum(custom.np)} tỷ</div><div class="mini-stat-sub">${dNp >= 0 ? "▲ +" : "▼ "}${F.fmtNum(dNp)} tỷ (${F.fmtPct(F.safeDiv(dNp, Math.abs(base.np) || 1))})</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">FCF Mô phỏng</div><div class="mini-stat-val" style="color:${dFcf >= 0 ? "#059669" : "#dc2626"}">${F.fmtNum(custom.fcf)} tỷ</div><div class="mini-stat-sub">${dFcf >= 0 ? "▲ +" : "▼ "}${F.fmtNum(dFcf)} tỷ vs gốc</div></div>
+        `;
+
+        if (typeof Chart !== "undefined") {
+          destroyChart("fpaScen");
+          state.charts.fpaScen = new Chart(document.getElementById("fpaScenarioChart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: ["Thận trọng", "Cơ sở (Gốc)", "Tích cực", "Mô phỏng (What-if)"],
+              datasets: [
+                { label: "EBITDA (tỷ)", data: [cons.ebitda, base.ebitda, opti.ebitda, custom.ebitda].map(v => +v.toFixed(1)), backgroundColor: "#f59e0b", borderRadius: 5 },
+                { label: "LNST (tỷ)", data: [cons.np, base.np, opti.np, custom.np].map(v => +v.toFixed(1)), backgroundColor: "#2563eb", borderRadius: 5 },
+                { label: "FCF (tỷ)", data: [cons.fcf, base.fcf, opti.fcf, custom.fcf].map(v => +v.toFixed(1)), backgroundColor: "#059669", borderRadius: 5 }
+              ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { title: { display: true, text: d.unit } } } }
+          });
+        }
+
+        // 4-Quarter Rolling Forecast based on custom scenario (seasonality weights: 22%, 25%, 26%, 27%)
+        const qWeights = [0.22, 0.25, 0.26, 0.27];
+        const qLabels = ["Quý 1 (Dự báo)", "Quý 2 (Dự báo)", "Quý 3 (Dự báo)", "Quý 4 (Dự báo)"];
+        let rollHtml = `<thead><tr><th>Chỉ tiêu (tỷ)</th>${qLabels.map(q => `<th>${q}</th>`).join("")}<th>Cả năm (12T)</th></tr></thead><tbody>`;
+        const rollMetrics = [
+          ["Doanh thu", custom.rev, true],
+          ["Lợi nhuận gộp", custom.gp, false],
+          ["EBITDA", custom.ebitda, true],
+          ["LNST dự kiến", custom.np, true],
+          ["FCF dự kiến", custom.fcf, false]
+        ];
+        rollMetrics.forEach(([lbl, ann, hl]) => {
+          rollHtml += `<tr class="${hl ? "row-highlight" : ""}"><td>${lbl}</td>${qWeights.map(w => `<td>${F.fmtNum(ann * w, 1)}</td>`).join("")}<td><strong>${F.fmtNum(ann, 1)}</strong></td></tr>`;
+        });
+        document.getElementById("fpaRollingTable").innerHTML = rollHtml + `</tbody>`;
+
+        // Dynamic CEO Recommendations
+        const cogs5Impact = cogs0 * 0.05 * (1 - taxRate);
+        const sga5Save = sga0 * 0.05 * (1 - taxRate);
+        const nwcRelease = ((d.bs.receivables[idx] || 0) + (d.bs.inventory[idx] || 0)) * 0.12;
+        const recs = [
+          {
+            level: dNp < 0 ? "danger" : "good",
+            title: `1. Phòng vệ biên lợi nhuận trước biến động NVL (Độ nhạy: mỗi +5% giá vốn làm giảm -${F.fmtNum(cogs5Impact)} tỷ LNST)`,
+            desc: `Ký hợp đồng bao tiêu nguyên liệu dài hạn hoặc cơ cấu lại danh mục sản phẩm biên cao. Với kịch bản bạn đang kéo, LNST thay đổi ${dNp >= 0 ? "+" : ""}${F.fmtNum(dNp)} tỷ đồng.`
+          },
+          {
+            level: "warn",
+            title: `2. Tối ưu chi phí Marketing & Vận hành (Cắt giảm 5% SG&A mang lại ngay +${F.fmtNum(sga5Save)} tỷ LNST)`,
+            desc: `Đo lường ROI từng kênh phân phối; cắt giảm các chiến dịch khuyến mãi kém hiệu quả và dồn ngân sách cho kênh có tỷ suất sinh lời cao nhất.`
+          },
+          {
+            level: "good",
+            title: `3. Tối ưu dòng tiền & Phân bổ vốn (Giải phóng +${F.fmtNum(nwcRelease)} tỷ tiền mặt từ Vốn lưu động)`,
+            desc: `Giảm 12% số dư Phải thu (${F.fmtNum(d.bs.receivables[idx])} tỷ) và Hàng tồn kho (${F.fmtNum(d.bs.inventory[idx])} tỷ) để bổ sung ngay +${F.fmtNum(nwcRelease)} tỷ tiền mặt phục vụ đầu tư mở rộng mà không cần vay thêm nợ.`
+          }
+        ];
+        document.getElementById("fpaRecommendations").innerHTML = recs.map(rc => `
+          <div class="alert-item ${rc.level}"><div class="alert-title">${rc.title}</div><div class="alert-desc">${rc.desc}</div></div>
+        `).join("");
+
+        window._latestFpaSummary = `BÁO CÁO FP&A TỰ ĐỘNG — ${d.companyName} (Kỳ ${d.periods[idx]})
+`
+          + `- Doanh thu gốc: ${F.fmtNum(base.rev)} tỷ | LNST gốc: ${F.fmtNum(base.np)} tỷ | FCF gốc: ${F.fmtNum(base.fcf)} tỷ
+`
+          + `- Kịch bản Mô phỏng (DT ${shRev}%, COGS ${shCogs}%, SG&A ${shSga}%, Lãi suất ${shRate}%): DT ${F.fmtNum(custom.rev)} tỷ | EBITDA ${F.fmtNum(custom.ebitda)} tỷ | LNST ${F.fmtNum(custom.np)} tỷ (${dNp >= 0 ? "+" : ""}${F.fmtNum(dNp)} tỷ) | FCF ${F.fmtNum(custom.fcf)} tỷ
+`
+          + `- Khuyến nghị chính: (1) Phòng vệ biến động NVL (±5% COGS = ±${F.fmtNum(cogs5Impact)} tỷ LNST); (2) Tối ưu 5% SG&A (+${F.fmtNum(sga5Save)} tỷ LNST); (3) Giải phóng 12% NWC (+${F.fmtNum(nwcRelease)} tỷ tiền mặt).`;
+      }
+
+      window.switchFpaStep = function (step) {
+        state.fpaStep = step;
+        ["all", "1", "2", "3", "4"].forEach(k => {
+          document.getElementById("fpaBtn-" + k)?.classList.toggle("active", k === step);
+        });
+        for (let i = 1; i <= 4; i++) {
+          const pane = document.getElementById("fpaPane-" + i);
+          if (pane) pane.classList.toggle("active", step === "all" || step === String(i));
+        }
+        renderFpaModel();
+      };
+
+      window.applyFpaPreset = function (rev, cogs, sga, rate) {
+        document.getElementById("fpaShockRev").value = rev;
+        document.getElementById("fpaShockCogs").value = cogs;
+        document.getElementById("fpaShockSga").value = sga;
+        document.getElementById("fpaShockRate").value = rate;
+        updateFpaScenario();
+      };
+
+      window.resetFpaSliders = function () {
+        window.applyFpaPreset(0, 0, 0, 0);
+        showStatus("🔄 Đã đặt lại kịch bản FP&A về mức cơ sở (0%).");
+      };
+
+      window.updateFpaScenario = updateFpaScenario;
+
+      window.copyFpaExecutiveBrief = async function (btn) {
+        const txt = window._latestFpaSummary || "Chưa có dữ liệu FP&A.";
+        try {
+          await navigator.clipboard.writeText(txt);
+          const old = btn.textContent; btn.textContent = "✅ Đã copy!";
+          setTimeout(() => btn.textContent = old, 1600);
+        } catch (e) { showStatus("Trình duyệt chặn clipboard.", "warn"); }
+      };
+
+      window.sendFpaToAiChat = function () {
+        const txt = window._latestFpaSummary || "";
+        window.switchTab("tab-doc-ai");
+        const inp = document.getElementById("docChatInput");
+        if (inp) {
+          inp.value = `Đóng vai Giám đốc FP&A (CFO), dựa trên bản tóm tắt mô hình FP&A sau, hãy lập kế hoạch hành động chi tiết cho 4 quý tới kèm KPI từng phòng ban:
+
+${txt}`;
+          inp.focus();
+        }
+        showStatus("✅ Đã gửi kịch bản FP&A sang khung Chat AI!");
+      };
+
       // Global bindings
       window.switchTab = function (id) {
         document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.getAttribute("data-tab") === id));
@@ -3297,7 +3934,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         document.getElementById("fcNwcPct").value = 15;
         updateForecast();
       };
-      window.renderDashboard = function () { renderDashboard(); renderLearning(); renderDocTemplates(); };
+      window.renderDashboard = function () { renderDashboard(); renderLearning(); renderDocTemplates(); renderFpaModel(); };
       window.updateForecast = updateForecast;
       window.updateValuationAndPeer = updateValuationAndPeer;
       window.renderPromptLibrary = renderPromptLibrary;
