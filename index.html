@@ -3,445 +3,2099 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích Báo Cáo Tài Chính Cá Nhân</title>
-  <link rel="stylesheet" href="css/styles.css?v=1.0" />
-  <!-- CDN Chart.js & SheetJS (ứng dụng vẫn chạy phần bảng & tính toán nếu offline) -->
+  <title>AI Phân Tích BCTC Cá Nhân v2.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --sidebar-bg: #0f172a;
+      --sidebar-hover: #1e293b;
+      --sidebar-active: #2563eb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-soft: #475569;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --good: #059669;
+      --good-bg: #ecfdf5;
+      --good-border: #a7f3d0;
+      --warn: #d97706;
+      --warn-bg: #fffbeb;
+      --warn-border: #fde68a;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --radius: 14px;
+      --radius-sm: 9px;
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+      --shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* Layout Shell */
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 268px;
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 16px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 6px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 16px;
+    }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .version-tag {
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(59, 130, 246, 0.25);
+      color: #93c5fd;
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+    .brand-sub {
+      font-size: 11.5px;
+      color: #94a3b8;
+      margin-top: 1px;
+    }
+
+    .sidebar-section-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      padding: 0 10px;
+      margin: 12px 0 6px;
+    }
+
+    .sidebar-select, .sidebar-input {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: #1e293b;
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 12.5px;
+      margin-bottom: 8px;
+      outline: none;
+    }
+    .sidebar-select:focus, .sidebar-input:focus {
+      border-color: #60a5fa;
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: #cbd5e1;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+    .nav-item:hover {
+      background: var(--sidebar-hover);
+      color: #fff;
+    }
+    .nav-item.active {
+      background: var(--sidebar-active);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+    .nav-icon {
+      font-size: 16px;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+    .side-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 8px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: #e2e8f0;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.15s;
+    }
+    .side-btn:hover {
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+    }
+    .side-btn.full {
+      grid-column: 1 / -1;
+      background: #f59e0b;
+      border-color: #f59e0b;
+      color: #0f172a;
+      font-weight: 700;
+    }
+    .side-btn.full:hover { background: #d97706; color: #fff; }
+
+    /* Main Workspace */
+    .workspace {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .topbar-left h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.25;
+    }
+    .topbar-left p {
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .period-pill-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 99px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-soft);
+    }
+    .period-pill-wrap select {
+      border: none;
+      background: transparent;
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .toast-banner {
+      margin: 14px 28px 0;
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--good-bg);
+      color: var(--good);
+      border: 1px solid var(--good-border);
+    }
+    .toast-banner.warn { background: var(--warn-bg); color: var(--warn); border-color: var(--warn-border); }
+    .toast-banner.error { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); }
+    .hidden { display: none !important; }
+
+    .content-area {
+      padding: 22px 28px 44px;
+      max-width: 1320px;
+      width: 100%;
+    }
+
+    .tab-panel { display: none; animation: fadeIn 0.2s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Quick Guide Banner */
+    .quick-guide {
+      background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .quick-guide-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 12.5px;
+      color: #1e3a8a;
+    }
+    .quick-guide-steps span { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      font-size: 11px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* Health Hero Card + KPI Grid */
+    .hero-row {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .health-card {
+      background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 100%);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .health-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #93c5fd; font-weight: 700; }
+    .health-score-row { display: flex; align-items: baseline; gap: 6px; margin: 10px 0 6px; }
+    .health-score { font-size: 42px; font-weight: 800; line-height: 1; }
+    .health-max { font-size: 15px; color: #94a3b8; font-weight: 600; }
+    .health-bar-bg { height: 8px; background: rgba(255,255,255,0.16); border-radius: 99px; overflow: hidden; margin: 8px 0 10px; }
+    .health-bar-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+    .health-verdict { font-size: 12.5px; color: #e2e8f0; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .kpi-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .kpi-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .kpi-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--primary); }
+    .kpi-dot.good { background: var(--good); }
+    .kpi-dot.warn { background: var(--warn); }
+    .kpi-dot.danger { background: var(--danger); }
+    .kpi-value { font-size: 23px; font-weight: 800; color: var(--text); margin: 6px 0 4px; letter-spacing: -0.02em; }
+    .kpi-sub { font-size: 12px; font-weight: 600; }
+    .kpi-sub.up { color: var(--good); }
+    .kpi-sub.down { color: var(--danger); }
+    .kpi-sub.neutral { color: var(--muted); }
+
+    /* Cards & Buttons */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .card-header h3 { font-size: 15.5px; font-weight: 700; color: var(--text); }
+    .muted { color: var(--muted); font-size: 12.5px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .btn:hover { background: var(--surface-soft); }
+    .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-sm { padding: 6px 11px; font-size: 12px; }
+
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 99px;
+      font-size: 11px; font-weight: 700;
+      background: var(--primary-soft); color: var(--primary);
+    }
+    .badge-good { background: var(--good-bg); color: var(--good); }
+    .badge-warn { background: var(--warn-bg); color: var(--warn); }
+    .badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+    /* Charts */
+    .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 18px; }
+    .full-width { grid-column: 1 / -1; }
+    .chart-wrap { position: relative; height: 320px; width: 100%; }
+    .chart-wrap-sm { position: relative; height: 250px; width: 100%; margin-top: 14px; }
+
+    /* Alerts */
+    .alerts-list { display: flex; flex-direction: column; gap: 10px; }
+    .alert-item {
+      padding: 13px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      background: var(--surface-soft);
+    }
+    .alert-item.danger { background: var(--danger-bg); border-color: var(--danger-border); border-left-color: var(--danger); }
+    .alert-item.warn { background: var(--warn-bg); border-color: var(--warn-border); border-left-color: var(--warn); }
+    .alert-item.good { background: var(--good-bg); border-color: var(--good-border); border-left-color: var(--good); }
+    .alert-title { font-weight: 700; font-size: 13.5px; margin-bottom: 3px; }
+    .alert-desc { font-size: 12.5px; color: var(--text-soft); }
+
+    /* Subtabs & Tables */
+    .subtab-bar {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 10px; margin-bottom: 16px;
+    }
+    .pill-group {
+      display: inline-flex; flex-wrap: wrap; gap: 4px;
+      background: #e2e8f0; padding: 4px; border-radius: 11px;
+    }
+    .pill-btn {
+      padding: 7px 13px; border-radius: 8px; border: none;
+      background: transparent; color: var(--text-soft);
+      font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .pill-btn.active { background: #fff; color: var(--primary); box-shadow: var(--shadow-sm); }
+
+    .table-responsive { overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th, .data-table td {
+      padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: right;
+    }
+    .data-table th:first-child, .data-table td:first-child { text-align: left; }
+    .data-table thead th {
+      background: var(--surface-soft); color: var(--text-soft);
+      font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .data-table tr.row-highlight { background: #f8fafc; font-weight: 700; }
+    .data-table tr.row-section td {
+      background: #eff6ff; color: #1e40af; font-weight: 700; text-align: left; font-size: 12px;
+    }
+    .cell-input {
+      width: 96px; padding: 5px 8px; text-align: right;
+      border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;
+      font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text);
+    }
+    .cell-input:focus { border-color: var(--primary); outline: 2px solid rgba(37,99,235,0.18); }
+    .num-pos { color: var(--good); font-weight: 700; }
+    .num-neg { color: var(--danger); font-weight: 700; }
+
+    /* Forms */
+    .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .form-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+    .form-grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; }
+    .two-col-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .input-box { display: flex; flex-direction: column; gap: 5px; }
+    .input-box label { font-size: 12px; font-weight: 600; color: var(--text-soft); }
+    .input-box input, .input-box select {
+      padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font-family: inherit; font-size: 13px; background: #fff; color: var(--text);
+    }
+    .input-box input:focus, .input-box select:focus { border-color: var(--primary); outline: 2px solid rgba(37,99,235,0.15); }
+
+    /* Valuation */
+    .val-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px; }
+    .val-box {
+      background: var(--surface-soft); border: 1px solid var(--border);
+      border-radius: 10px; padding: 13px;
+    }
+    .val-box-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .val-box-value { font-size: 20px; font-weight: 800; color: var(--primary); margin: 3px 0; }
+    .val-box-note { font-size: 12px; color: var(--text-soft); }
+
+    /* AI & Prompts */
+    .code-textarea {
+      width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px;
+      line-height: 1.55; background: #f8fafc; color: var(--text); resize: vertical;
+    }
+    .action-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+    .inline-status { font-size: 12.5px; font-weight: 600; color: var(--primary); }
+    .inline-status.error { color: var(--danger); }
+    .ai-output {
+      margin-top: 14px; padding: 16px; border-radius: 10px;
+      background: #f8fafc; border: 1px solid #cbd5e1;
+      white-space: pre-wrap; font-size: 13.5px; line-height: 1.65;
+    }
+
+    .prompt-list { display: flex; flex-direction: column; gap: 16px; }
+    .prompt-card {
+      border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--surface-soft);
+    }
+    .prompt-card h4 { font-size: 14px; color: var(--text); margin-bottom: 10px; }
+    .prompt-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .prompt-pane { background: #fff; border: 1px solid var(--border); border-radius: 9px; padding: 12px; }
+    .prompt-pane-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; font-weight: 700; }
+    .prompt-pre {
+      white-space: pre-wrap; font-family: inherit; font-size: 12px; color: var(--text-soft);
+      max-height: 185px; overflow-y: auto; line-height: 1.5;
+    }
+
+    /* Learning Modules */
+    .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .module-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px; box-shadow: var(--shadow-sm); border-top: 4px solid var(--primary);
+    }
+    .module-tag { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .module-card h3 { font-size: 16px; margin: 5px 0 8px; color: var(--text); }
+    .module-card ul { padding-left: 18px; margin-top: 10px; font-size: 13px; color: var(--text-soft); }
+    .module-card li { margin-bottom: 6px; }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .hero-row { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 860px) {
+      .app-shell { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; }
+      .nav-list { flex-direction: row; overflow-x: auto; }
+      .nav-item { white-space: nowrap; width: auto; }
+      .charts-grid, .two-col-grid, .prompt-cols { grid-template-columns: 1fr; }
+      .content-area, .topbar { padding-left: 16px; padding-right: 16px; }
+    }
+    @media print {
+      .sidebar, .topbar-right, .quick-guide, .btn { display: none !important; }
+      .tab-panel { display: block !important; page-break-after: always; }
+      body { background: #fff; }
+      .card { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-left">
-      <div class="logo-badge">AI</div>
-      <div>
-        <h1>AI Phân Tích BCTC <span class="version-pill">v1.0</span></h1>
-        <p class="subtitle">Công cụ phân tích tài chính cá nhân · Chạy độc lập trên trình duyệt</p>
+  <div class="app-shell">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">AI</div>
+        <div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v2.0</span></div>
+          <div class="brand-sub">Bản cá nhân · All-in-one</div>
+        </div>
       </div>
-    </div>
 
-    <div class="header-controls">
-      <div class="control-group">
-        <label for="companySelect">Bộ dữ liệu:</label>
-        <select id="companySelect" onchange="window.onSelectSample(this.value)">
-          <option value="sample_5y">Mẫu 1: DN Sản xuất - TM (5 năm 2022–2026)</option>
-          <option value="sample_q1_2026">Mẫu 2: Case Q1/2026 (Lãi TC, Dòng tiền KD âm)</option>
-          <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <input type="text" id="companyNameInput" placeholder="Tên doanh nghiệp..." onchange="window.onCompanyNameChange(this.value)" />
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-outline" onclick="window.downloadExcelTemplate()" title="Tải file Excel mẫu chuẩn">📥 Excel mẫu</button>
-        <label class="btn btn-outline file-upload-btn" title="Nhập file Excel (.xlsx) hoặc CSV">
+      <div class="sidebar-section-label">Hồ sơ doanh nghiệp</div>
+      <select id="companySelect" class="sidebar-select" onchange="window.onSelectSample(this.value)">
+        <option value="sample_5y">Mẫu 1: DN Sản xuất - TM (5 năm)</option>
+        <option value="sample_q1_2026">Mẫu 2: Case Q1/2026 (Lãi TC, OCF âm)</option>
+        <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
+      </select>
+      <input type="text" id="companyNameInput" class="sidebar-input" placeholder="Nhập tên công ty..." onchange="window.onCompanyNameChange(this.value)" />
+
+      <div class="sidebar-section-label">Điều hướng phân tích</div>
+      <nav class="nav-list" role="tablist">
+        <button class="nav-item active" data-tab="tab-dashboard" onclick="window.switchTab('tab-dashboard')">
+          <span class="nav-icon">📊</span> Dashboard Tổng quan
+        </button>
+        <button class="nav-item" data-tab="tab-statements" onclick="window.switchTab('tab-statements')">
+          <span class="nav-icon">📑</span> BCTC &amp; Ngang / Dọc
+        </button>
+        <button class="nav-item" data-tab="tab-ratios" onclick="window.switchTab('tab-ratios')">
+          <span class="nav-icon">⚠️</span> Chỉ số &amp; Cảnh báo Rủi ro
+        </button>
+        <button class="nav-item" data-tab="tab-forecast" onclick="window.switchTab('tab-forecast')">
+          <span class="nav-icon">📈</span> Dự báo Tài chính 3 năm
+        </button>
+        <button class="nav-item" data-tab="tab-valuation" onclick="window.switchTab('tab-valuation')">
+          <span class="nav-icon">⚖️</span> So sánh ngành &amp; Định giá
+        </button>
+        <button class="nav-item" data-tab="tab-ai" onclick="window.switchTab('tab-ai')">
+          <span class="nav-icon">🤖</span> Báo cáo &amp; Trợ lý AI
+        </button>
+        <button class="nav-item" data-tab="tab-learning" onclick="window.switchTab('tab-learning')">
+          <span class="nav-icon">📚</span> 5 Module Nền tảng
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="side-btn" onclick="window.downloadExcelTemplate()" title="Tải file Excel mẫu chuẩn">📥 Excel mẫu</button>
+        <label class="side-btn" title="Nhập file Excel (.xlsx) hoặc CSV">
           📤 Nhập Excel
           <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" onchange="window.handleExcelUpload(event)" hidden />
         </label>
-        <button class="btn btn-outline" onclick="window.exportJsonBackup()" title="Lưu dữ liệu ra file JSON">💾 Backup</button>
-        <label class="btn btn-outline file-upload-btn" title="Khôi phục từ file JSON">
-          📂 Mở Backup
+        <button class="side-btn" onclick="window.exportJsonBackup()" title="Lưu dữ liệu ra file JSON">💾 Backup</button>
+        <label class="side-btn" title="Khôi phục từ file JSON">
+          📂 Mở file
           <input type="file" id="jsonFileInput" accept=".json" onchange="window.handleJsonImport(event)" hidden />
         </label>
-        <button class="btn btn-primary" onclick="window.print()">🖨️ In / PDF</button>
+        <button class="side-btn full" onclick="window.print()">🖨️ Xuất báo cáo / In PDF</button>
       </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 id="topbarTitle">Dashboard Tổng quan</h1>
+          <p id="topbarSubtitle">Đơn vị tính: Tỷ đồng · Tự động lưu cục bộ trên trình duyệt</p>
+        </div>
+        <div class="topbar-right">
+          <div class="period-pill-wrap">
+            <span>Kỳ xem:</span>
+            <select id="dashboardPeriodSelect" onchange="window.renderDashboard()"></select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="window.switchTab('tab-ai')">🤖 Hỏi AI ngay</button>
+        </div>
+      </header>
+
+      <div id="globalStatus" class="toast-banner hidden"></div>
+
+      <main class="content-area">
+        <!-- TAB 1: DASHBOARD -->
+        <section id="tab-dashboard" class="tab-panel active">
+          <div class="quick-guide" id="quickGuideBanner">
+            <div class="quick-guide-steps">
+              <span><strong class="step-num">1</strong> Chọn mẫu hoặc bấm <strong>Nhập Excel</strong> bên trái</span>
+              <span><strong class="step-num">2</strong> Xem điểm sức khỏe, biểu đồ &amp; cảnh báo đỏ bên dưới</span>
+              <span><strong class="step-num">3</strong> Vào <strong>Báo cáo &amp; Trợ lý AI</strong> để xuất báo cáo cho Ban Giám đốc</span>
+            </div>
+            <button class="btn btn-sm" onclick="document.getElementById('quickGuideBanner').classList.add('hidden')">Ẩn hướng dẫn</button>
+          </div>
+
+          <div class="hero-row">
+            <div class="health-card">
+              <div>
+                <div class="health-label">Điểm sức khỏe tài chính</div>
+                <div class="health-score-row">
+                  <span class="health-score" id="healthScoreVal">—</span>
+                  <span class="health-max">/ 100</span>
+                </div>
+                <div class="health-bar-bg">
+                  <div class="health-bar-fill" id="healthBarFill" style="width:0%;background:#10b981;"></div>
+                </div>
+              </div>
+              <div class="health-verdict" id="healthVerdictText">Đang tính toán từ chỉ số thanh khoản, đòn bẩy, sinh lời và dòng tiền...</div>
+            </div>
+
+            <div id="kpiGrid" class="kpi-grid"></div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="card full-width">
+              <div class="card-header">
+                <div>
+                  <h3>Xu hướng 3–5 năm: Doanh thu, EBITDA, LNST &amp; Biên lợi nhuận</h3>
+                  <span class="muted">Giúp nhận diện sớm tình trạng biên lợi nhuận tụt dần theo thời gian</span>
+                </div>
+                <span class="badge">Trend Analysis</span>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Cầu lợi nhuận (Profit Bridge / Waterfall)</h3>
+                <span class="badge">Waterfall</span>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="waterfallChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Thực tế vs Kế hoạch (Variance Analysis)</h3>
+                <span class="badge">Budget Variance</span>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="varianceChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>🚨 Tín hiệu cảnh báo &amp; Giải thích biến động nổi bật</h3>
+              <button class="btn btn-sm" onclick="window.switchTab('tab-ratios')">Xem đủ 13 chỉ số →</button>
+            </div>
+            <div id="dashboardHighlights" class="alerts-list"></div>
+          </div>
+        </section>
+
+        <!-- TAB 2: BCTC & NGANG / DỌC -->
+        <section id="tab-statements" class="tab-panel">
+          <div class="subtab-bar">
+            <div class="pill-group">
+              <button class="pill-btn active" id="stmt-is" onclick="window.setStatementType('is')">Kết quả kinh doanh</button>
+              <button class="pill-btn" id="stmt-bs" onclick="window.setStatementType('bs')">Bảng cân đối kế toán</button>
+              <button class="pill-btn" id="stmt-cf" onclick="window.setStatementType('cf')">Lưu chuyển tiền tệ</button>
+            </div>
+            <div class="pill-group">
+              <button class="pill-btn active" id="mode-abs" onclick="window.setAnalysisMode('abs')">Số tuyệt đối (tỷ)</button>
+              <button class="pill-btn" id="mode-vertical" onclick="window.setAnalysisMode('vertical')">Phân tích dọc (%)</button>
+              <button class="pill-btn" id="mode-horizontal" onclick="window.setAnalysisMode('horizontal')">Phân tích ngang (% YoY)</button>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-sm" onclick="window.addNewPeriod()">➕ Thêm kỳ</button>
+              <button class="btn btn-sm" onclick="window.resetToCurrentSample()">🔄 Khôi phục mẫu</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Bảng số liệu BCTC (Bấm trực tiếp vào ô số để sửa)</h3>
+              <span class="muted">Tự động cập nhật Dashboard, Chỉ số, Dự báo &amp; Prompt AI</span>
+            </div>
+            <div class="table-responsive">
+              <table id="statementTable" class="data-table"></table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Kế hoạch / Ngân sách kỳ gần nhất (Cho biểu đồ Variance Analysis)</h3>
+            </div>
+            <div id="budgetInputsGrid" class="form-grid-4"></div>
+          </div>
+        </section>
+
+        <!-- TAB 3: CHỈ SỐ & RỦI RO -->
+        <section id="tab-ratios" class="tab-panel">
+          <div class="card">
+            <div class="card-header">
+              <h3>🚨 Bộ quét Red Flags &amp; Giải thích biến động tự động</h3>
+              <span class="badge badge-warn">Auto Risk Engine</span>
+            </div>
+            <div id="riskAlertsContainer" class="alerts-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Bảng 13 Chỉ số Tài chính cốt lõi qua các kỳ</h3>
+              <span class="muted">Đánh giá tự động dựa trên kỳ gần nhất</span>
+            </div>
+            <div class="table-responsive">
+              <table id="ratiosTable" class="data-table"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: DỰ BÁO -->
+        <section id="tab-forecast" class="tab-panel">
+          <div class="card">
+            <div class="card-header">
+              <h3>Giả định mô hình Dự báo 3 năm tới</h3>
+              <button class="btn btn-sm" onclick="window.resetForecastAssumptions()">🔄 Đặt lại mặc định</button>
+            </div>
+            <div class="form-grid-3">
+              <div class="input-box">
+                <label for="fcRevGrowth">Tăng trưởng doanh thu / năm (%)</label>
+                <input type="number" step="0.5" id="fcRevGrowth" value="12" oninput="window.updateForecast()" />
+              </div>
+              <div class="input-box">
+                <label for="fcGrossMargin">Biên lợi nhuận gộp mục tiêu (%)</label>
+                <input type="number" step="0.5" id="fcGrossMargin" value="28" oninput="window.updateForecast()" />
+              </div>
+              <div class="input-box">
+                <label for="fcOpexPct">CP Bán hàng &amp; QLDN / DT (%)</label>
+                <input type="number" step="0.5" id="fcOpexPct" value="14" oninput="window.updateForecast()" />
+              </div>
+              <div class="input-box">
+                <label for="fcDepPct">Khấu hao / Doanh thu (%)</label>
+                <input type="number" step="0.5" id="fcDepPct" value="3.5" oninput="window.updateForecast()" />
+              </div>
+              <div class="input-box">
+                <label for="fcCapexPct">CAPEX / Doanh thu (%)</label>
+                <input type="number" step="0.5" id="fcCapexPct" value="4" oninput="window.updateForecast()" />
+              </div>
+              <div class="input-box">
+                <label for="fcTaxRate">Thuế suất TNDN (%)</label>
+                <input type="number" step="0.5" id="fcTaxRate" value="20" oninput="window.updateForecast()" />
+              </div>
+              <div class="input-box">
+                <label for="fcNwcPct">Vốn lưu động ròng / DT (%)</label>
+                <input type="number" step="0.5" id="fcNwcPct" value="15" oninput="window.updateForecast()" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Biểu đồ Dự báo Doanh thu, EBITDA &amp; Dòng tiền tự do (FCF)</h3>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="forecastChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Bảng kết quả Dự báo chi tiết (Tỷ đồng)</h3>
+            </div>
+            <div class="table-responsive">
+              <table id="forecastTable" class="data-table"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: SO SÁNH NGÀNH & ĐỊNH GIÁ -->
+        <section id="tab-valuation" class="tab-panel">
+          <div class="two-col-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3>So sánh cùng ngành (Nhập trung bình ngành)</h3>
+              </div>
+              <div class="form-grid-2">
+                <div class="input-box">
+                  <label for="peerGrossMargin">Biên LN gộp ngành (%)</label>
+                  <input type="number" step="0.5" id="peerGrossMargin" value="26" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="peerNetMargin">Biên LN ròng ngành (%)</label>
+                  <input type="number" step="0.5" id="peerNetMargin" value="9.5" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="peerRoa">ROA ngành (%)</label>
+                  <input type="number" step="0.5" id="peerRoa" value="7.5" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="peerRoe">ROE ngành (%)</label>
+                  <input type="number" step="0.5" id="peerRoe" value="15" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="peerInvTurn">Vòng quay tồn kho ngành (x)</label>
+                  <input type="number" step="0.2" id="peerInvTurn" value="5.5" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="peerDE">D/E ngành (x)</label>
+                  <input type="number" step="0.1" id="peerDE" value="1.0" oninput="window.updateValuationAndPeer()" />
+                </div>
+              </div>
+              <div class="chart-wrap-sm">
+                <canvas id="peerChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Định giá DCF &amp; Bội số (EV/EBITDA, P/E, P/B)</h3>
+              </div>
+              <div class="form-grid-2">
+                <div class="input-box">
+                  <label for="valWacc">WACC - Chi phí vốn (%)</label>
+                  <input type="number" step="0.5" id="valWacc" value="11" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="valTermG">Tăng trưởng dài hạn g (%)</label>
+                  <input type="number" step="0.5" id="valTermG" value="3.5" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="valShares">Số cổ phiếu (triệu CP)</label>
+                  <input type="number" step="1" id="valShares" value="100" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="valMarketPrice">Giá thị trường (nghìn đ/CP)</label>
+                  <input type="number" step="0.5" id="valMarketPrice" value="25" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="valEvEbitda">EV/EBITDA ngành (x)</label>
+                  <input type="number" step="0.5" id="valEvEbitda" value="8.5" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="valPe">P/E ngành (x)</label>
+                  <input type="number" step="0.5" id="valPe" value="12" oninput="window.updateValuationAndPeer()" />
+                </div>
+                <div class="input-box">
+                  <label for="valPb">P/B ngành (x)</label>
+                  <input type="number" step="0.1" id="valPb" value="1.8" oninput="window.updateValuationAndPeer()" />
+                </div>
+              </div>
+              <div id="valuationSummary" class="val-summary-grid"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Bảng độ nhạy định giá DCF (Nghìn đồng/CP theo WACC &amp; g)</h3>
+            </div>
+            <div class="table-responsive">
+              <table id="sensitivityTable" class="data-table"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: BÁO CÁO & TRỢ LÝ AI -->
+        <section id="tab-ai" class="tab-panel">
+          <div class="card">
+            <div class="card-header">
+              <h3>📝 Sinh nhanh Báo cáo Quản trị (Offline — không cần API)</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <select id="reportTypeSelect" style="padding:6px 10px;border-radius:8px;border:1px solid #cbd5e1;font-size:12.5px;">
+                  <option value="bod">Báo cáo Ban Giám đốc</option>
+                  <option value="monthly">Báo cáo Tháng / Quý</option>
+                  <option value="agm">Báo cáo ĐHCĐ</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="window.generateOfflineReport()">✨ Tạo bản nháp</button>
+                <button class="btn btn-sm" onclick="window.copyReportDraft()">📋 Copy</button>
+                <button class="btn btn-sm" onclick="window.downloadReportMd()">⬇️ Tải .md</button>
+              </div>
+            </div>
+            <div id="reportStatus" class="inline-status" style="margin-bottom:8px;"></div>
+            <textarea id="reportDraftArea" rows="11" class="code-textarea" placeholder="Bấm 'Tạo bản nháp' để hệ thống tự viết báo cáo từ số liệu hiện tại..."></textarea>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>⚡ Gọi AI phân tích trực tiếp (Tùy chọn — API Key chỉ lưu trên máy bạn)</h3>
+            </div>
+            <div class="form-grid-3">
+              <div class="input-box">
+                <label for="aiProviderSelect">Nhà cung cấp AI</label>
+                <select id="aiProviderSelect" onchange="window.saveAiConfig()">
+                  <option value="gemini">Google Gemini (gemini-2.5-flash)</option>
+                  <option value="openai">OpenAI (gpt-4o-mini)</option>
+                </select>
+              </div>
+              <div class="input-box">
+                <label for="aiApiKeyInput">API Key cá nhân</label>
+                <input type="password" id="aiApiKeyInput" placeholder="Dán API Key..." onchange="window.saveAiConfig()" />
+              </div>
+              <div class="input-box">
+                <label for="aiTaskSelect">Chủ đề phân tích</label>
+                <select id="aiTaskSelect">
+                  <option value="variance">Giải thích biến động &amp; Nguyên nhân gốc rễ</option>
+                  <option value="risks">Soát xét rủi ro &amp; Red Flags</option>
+                  <option value="bod_report">Viết Báo cáo Ban Giám đốc chuyên sâu</option>
+                  <option value="valuation">Đánh giá định giá &amp; So sánh ngành</option>
+                  <option value="forecast">Đề xuất kịch bản Dự báo &amp; Dòng tiền</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-box" style="margin-top:10px;">
+              <label for="aiCustomQuestion">Câu hỏi bổ sung (tùy chọn)</label>
+              <input type="text" id="aiCustomQuestion" placeholder="Ví dụ: Đề xuất 3 việc cần làm ngay để cải thiện dòng tiền kinh doanh..." oninput="window.renderPromptLibrary()" />
+            </div>
+            <div class="action-row">
+              <button class="btn btn-primary" id="runAiBtn" onclick="window.runDirectAiAnalysis()">🚀 Chạy phân tích AI ngay</button>
+              <span id="aiCallStatus" class="inline-status"></span>
+            </div>
+            <div id="aiResponseBox" class="ai-output hidden"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>📋 Thư viện Prompt AI (Bản gốc + Bản tự động ghép số liệu)</h3>
+                <span class="muted">Dùng miễn phí 100%: bấm Copy kèm số liệu rồi dán vào Claude / ChatGPT / Gemini</span>
+              </div>
+            </div>
+            <div id="promptLibraryContainer" class="prompt-list"></div>
+          </div>
+        </section>
+
+        <!-- TAB 7: 5 MODULE NỀN TẢNG -->
+        <section id="tab-learning" class="tab-panel">
+          <div id="learningModulesGrid" class="modules-grid"></div>
+        </section>
+      </main>
     </div>
-  </header>
+  </div>
 
-  <div id="globalStatus" class="status-banner hidden"></div>
+  <script>
+    // ================= 1. DỮ LIỆU MẪU =================
+    window.BCTC_SAMPLES = {
+      sample_5y: {
+        companyName: "CTCP Sản Xuất & TM Minh Khôi (Mẫu 5 năm)",
+        unit: "tỷ đồng",
+        periods: ["2022", "2023", "2024", "2025", "2026"],
+        budgetLatest: { revenue: 2550, grossProfit: 710, ebitda: 390, ebt: 270, netProfit: 216, ocf: 240 },
+        is: {
+          revenue: [1650, 1890, 2120, 2310, 2480],
+          cogs: [1122, 1304, 1505, 1686, 1860],
+          sga: [230, 265, 305, 345, 395],
+          depreciation: [62, 68, 74, 82, 88],
+          finIncome: [18, 22, 19, 24, 21],
+          interestExpense: [34, 42, 55, 71, 89],
+          otherProfit: [5, 4, 2, -5, -8],
+          taxExpense: [57, 61, 55, 45, 30]
+        },
+        bs: {
+          cash: [210, 195, 160, 135, 112],
+          receivables: [245, 298, 375, 465, 590],
+          inventory: [280, 340, 430, 540, 695],
+          otherCurrent: [45, 52, 58, 65, 72],
+          fixedAssets: [680, 745, 820, 910, 985],
+          longTermInvest: [110, 120, 135, 150, 160],
+          otherNonCurrent: [50, 55, 62, 70, 76],
+          shortTermDebt: [180, 230, 310, 415, 540],
+          payables: [260, 295, 330, 370, 410],
+          longTermDebt: [240, 280, 345, 420, 495],
+          equity: [940, 1000, 1055, 1130, 1245]
+        },
+        cf: {
+          ocf: [265, 230, 185, 110, 42],
+          icf: [-140, -165, -180, -195, -175],
+          fcfFin: [-90, -80, -40, 60, 110],
+          capex: [125, 145, 160, 170, 155]
+        }
+      },
+      sample_q1_2026: {
+        companyName: "Doanh nghiệp Minh họa BCTC Riêng (Q1/2026)",
+        unit: "tỷ đồng",
+        periods: ["Q1/2025", "Q1/2026"],
+        budgetLatest: { revenue: 4200, grossProfit: 920, ebitda: 550, ebt: 2100, netProfit: 1750, ocf: 300 },
+        is: {
+          revenue: [4100, 3690],
+          cogs: [3150, 2915],
+          sga: [420, 435],
+          depreciation: [120, 125],
+          finIncome: [450, 1948],
+          interestExpense: [140, 165],
+          otherProfit: [15, 12],
+          taxExpense: [171, 307]
+        },
+        bs: {
+          cash: [1850, 2120],
+          receivables: [3100, 3650],
+          inventory: [2400, 2890],
+          otherCurrent: [620, 686],
+          fixedAssets: [4100, 4050],
+          longTermInvest: [18200, 19072],
+          otherNonCurrent: [580, 600],
+          shortTermDebt: [2100, 2450],
+          payables: [2350, 2608],
+          longTermDebt: [2650, 2700],
+          equity: [23750, 25310]
+        },
+        cf: {
+          ocf: [315, -402],
+          icf: [-480, 2381],
+          fcfFin: [210, -1709],
+          capex: [240, 180]
+        }
+      }
+    };
 
-  <nav class="tab-nav" role="tablist">
-    <button class="tab-btn active" data-tab="tab-dashboard" onclick="window.switchTab('tab-dashboard')">📊 Dashboard & Biểu đồ</button>
-    <button class="tab-btn" data-tab="tab-statements" onclick="window.switchTab('tab-statements')">📑 BCTC & Ngang/Dọc</button>
-    <button class="tab-btn" data-tab="tab-ratios" onclick="window.switchTab('tab-ratios')">⚠️ Chỉ số & Rủi ro</button>
-    <button class="tab-btn" data-tab="tab-forecast" onclick="window.switchTab('tab-forecast')">📈 Dự báo 3 năm</button>
-    <button class="tab-btn" data-tab="tab-valuation" onclick="window.switchTab('tab-valuation')">⚖️ So sánh ngành & Định giá</button>
-    <button class="tab-btn" data-tab="tab-ai" onclick="window.switchTab('tab-ai')">🤖 Báo cáo & Trợ lý AI</button>
-    <button class="tab-btn" data-tab="tab-learning" onclick="window.switchTab('tab-learning')">📚 5 Module Nền tảng</button>
-  </nav>
+    window.LEARNING_MODULES = [
+      {
+        tag: "Module 1",
+        title: "Nền tảng BCTC & Bảng cân đối kế toán",
+        desc: "Hiểu tài sản, nguồn vốn và vốn lưu động để biết doanh nghiệp đang sống bằng vốn tự có hay bằng nợ.",
+        bullets: [
+          "Tổng Tài sản = Nợ phải trả + Vốn chủ sở hữu.",
+          "Vốn lưu động ròng (NWC) = Tài sản ngắn hạn − Nợ ngắn hạn.",
+          "Soi tỷ trọng Phải thu và Tồn kho để phát hiện vốn bị giam."
+        ]
+      },
+      {
+        tag: "Module 2",
+        title: "Kết quả kinh doanh & Lưu chuyển tiền tệ",
+        desc: "Bóc tách Gross Profit, EBITDA, NPAT và đối chiếu lợi nhuận trên giấy với tiền thật về tài khoản.",
+        bullets: [
+          "Biên gộp giảm kéo dài là tín hiệu mất lợi thế cạnh tranh hoặc giá vốn tăng.",
+          "EBITDA đo dòng tiền từ hoạt động cốt lõi trước lãi vay, thuế, khấu hao.",
+          "Luôn so sánh LNST với Dòng tiền kinh doanh (OCF): lãi cao mà OCF âm cần kiểm tra ngay."
+        ]
+      },
+      {
+        tag: "Module 3",
+        title: "Hệ thống Chỉ số Tài chính",
+        desc: "Đọc hiểu 4 nhóm chỉ số (Thanh toán, Đòn bẩy, Sinh lời, Hiệu quả) trong đúng bối cảnh ngành.",
+        bullets: [
+          "Current Ratio > 1.2–1.5 và Quick Ratio > 1.0 thường là ngưỡng an toàn.",
+          "D/E cần xem cùng khả năng trả lãi (ICR = EBIT / Lãi vay).",
+          "ROE cao cần kiểm tra xem đến từ biên lợi nhuận tốt hay vay nợ quá nhiều."
+        ]
+      },
+      {
+        tag: "Module 4",
+        title: "Thực hành phân tích BCTC thực tế",
+        desc: "Quy trình 4 bước đọc một bộ BCTC thật từ đầu đến cuối để ra quyết định quản trị.",
+        bullets: [
+          "Bước 1: Nhìn xu hướng 3–5 năm (Doanh thu, Biên gộp, LNST, OCF).",
+          "Bước 2: Phân tích dọc (% cơ cấu) và ngang (% YoY).",
+          "Bước 3: Quét Red Flags (tồn kho, phải thu, nợ ngắn hạn, chi phí bất thường).",
+          "Bước 4: So sánh ngành và định giá nhanh (DCF, EV/EBITDA, P/E, P/B)."
+        ]
+      },
+      {
+        tag: "Module 5",
+        title: "Ứng dụng AI & Checklist kiểm chứng",
+        desc: "Dùng AI giảm thời gian làm báo cáo từ 2–3 giờ xuống 15 phút mà vẫn kiểm soát được độ chính xác.",
+        bullets: [
+          "Dùng nút 'Copy kèm số liệu' ở tab Báo cáo & Trợ lý AI để cấp dữ liệu sạch cho AI.",
+          "Kiểm tra 3 lỗi AI hay gặp: sai đơn vị tính, nhầm dấu dòng tiền, nhầm mẫu số bình quân/cuối kỳ.",
+          "Luôn đặt câu hỏi nối tiếp theo chuỗi 'Tại sao?' để tìm nguyên nhân gốc rễ."
+        ]
+      }
+    ];
 
-  <main class="app-main">
-    <!-- TAB 1: DASHBOARD -->
-    <section id="tab-dashboard" class="tab-panel active">
-      <div class="panel-header">
-        <div>
-          <h2 id="dashboardTitle">Tổng quan sức khỏe tài chính</h2>
-          <p class="muted" id="dashboardSubtitle">Đơn vị tính: Tỷ đồng · Kỳ gần nhất so với kỳ liền trước</p>
-        </div>
-        <div class="inline-controls">
-          <label for="dashboardPeriodSelect">Kỳ phân tích:</label>
-          <select id="dashboardPeriodSelect" onchange="window.renderDashboard()"></select>
-        </div>
-      </div>
+    // ================= 2. FINANCE ENGINE =================
+    window.FinanceEngine = (function () {
+      function safeDiv(a, b) {
+        if (b === null || b === undefined || isNaN(b) || Math.abs(b) < 1e-9) return 0;
+        return a / b;
+      }
+      function fmtNum(val, decimals = 1) {
+        if (val === null || val === undefined || isNaN(val)) return "—";
+        return Number(val).toLocaleString("vi-VN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+      }
+      function fmtPct(val, decimals = 1) {
+        if (val === null || val === undefined || isNaN(val)) return "—";
+        return (val * 100).toLocaleString("vi-VN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + "%";
+      }
+      function yoyPct(arr, idx) {
+        if (idx <= 0 || !arr || Math.abs(arr[idx - 1]) < 1e-9) return null;
+        return (arr[idx] - arr[idx - 1]) / Math.abs(arr[idx - 1]);
+      }
 
-      <div id="kpiGrid" class="kpi-grid"></div>
+      function computeDerived(data) {
+        const n = data.periods.length;
+        const { is, bs, cf } = data;
+        const grossProfit = [], ebit = [], ebitda = [], ebt = [], netProfit = [];
+        const currentAssets = [], nonCurrentAssets = [], totalAssets = [];
+        const currentLiabilities = [], totalLiabilities = [], totalDebt = [], netDebt = [], nwc = [], fcf = [];
 
-      <div class="charts-grid">
-        <div class="card chart-card full-width">
-          <div class="card-header">
-            <h3>Xu hướng 3–5 năm: Doanh thu, EBITDA, LNST & Biên lợi nhuận</h3>
-            <span class="badge">Trend Analysis</span>
+        for (let i = 0; i < n; i++) {
+          const rev = Number(is.revenue[i]) || 0;
+          const cogs = Number(is.cogs[i]) || 0;
+          const sga = Number(is.sga[i]) || 0;
+          const dep = Number(is.depreciation[i]) || 0;
+          const finInc = Number(is.finIncome[i]) || 0;
+          const intExp = Number(is.interestExpense[i]) || 0;
+          const otherP = Number(is.otherProfit[i]) || 0;
+          const tax = Number(is.taxExpense[i]) || 0;
+
+          const gp = rev - cogs;
+          const op = gp - sga;
+          const ebda = op + dep;
+          const ebtV = op + finInc - intExp + otherP;
+          const np = ebtV - tax;
+
+          grossProfit.push(gp); ebit.push(op); ebitda.push(ebda); ebt.push(ebtV); netProfit.push(np);
+
+          const ca = (Number(bs.cash[i]) || 0) + (Number(bs.receivables[i]) || 0) + (Number(bs.inventory[i]) || 0) + (Number(bs.otherCurrent[i]) || 0);
+          const nca = (Number(bs.fixedAssets[i]) || 0) + (Number(bs.longTermInvest[i]) || 0) + (Number(bs.otherNonCurrent[i]) || 0);
+          const ta = ca + nca;
+          const cl = (Number(bs.shortTermDebt[i]) || 0) + (Number(bs.payables[i]) || 0);
+          const tl = cl + (Number(bs.longTermDebt[i]) || 0);
+          const debt = (Number(bs.shortTermDebt[i]) || 0) + (Number(bs.longTermDebt[i]) || 0);
+          const nd = debt - (Number(bs.cash[i]) || 0);
+
+          currentAssets.push(ca); nonCurrentAssets.push(nca); totalAssets.push(ta);
+          currentLiabilities.push(cl); totalLiabilities.push(tl); totalDebt.push(debt); netDebt.push(nd);
+          nwc.push(ca - cl);
+          fcf.push((Number(cf.ocf[i]) || 0) - (Number(cf.capex[i]) || 0));
+        }
+
+        const ratios = [];
+        for (let i = 0; i < n; i++) {
+          const rev = Number(is.revenue[i]) || 0;
+          const cogs = Number(is.cogs[i]) || 0;
+          const eq = Number(bs.equity[i]) || 0;
+          const inv = Number(bs.inventory[i]) || 0;
+          const rec = Number(bs.receivables[i]) || 0;
+          const intExp = Number(is.interestExpense[i]) || 0;
+
+          ratios.push({
+            period: data.periods[i],
+            currentRatio: safeDiv(currentAssets[i], currentLiabilities[i]),
+            quickRatio: safeDiv(currentAssets[i] - inv, currentLiabilities[i]),
+            debtToEquity: safeDiv(totalLiabilities[i], eq),
+            debtToAssets: safeDiv(totalLiabilities[i], totalAssets[i]),
+            icr: intExp > 0 ? safeDiv(ebit[i], intExp) : 99,
+            grossMargin: safeDiv(grossProfit[i], rev),
+            ebitdaMargin: safeDiv(ebitda[i], rev),
+            netMargin: safeDiv(netProfit[i], rev),
+            roa: safeDiv(netProfit[i], totalAssets[i]),
+            roe: safeDiv(netProfit[i], eq),
+            assetTurnover: safeDiv(rev, totalAssets[i]),
+            inventoryTurnover: safeDiv(cogs, inv),
+            dso: safeDiv(rec, rev) * 365
+          });
+        }
+        return { grossProfit, ebit, ebitda, ebt, netProfit, currentAssets, nonCurrentAssets, totalAssets, currentLiabilities, totalLiabilities, totalDebt, netDebt, nwc, fcf, ratios };
+      }
+
+      function computeHealthScore(data, derived, idx) {
+        const r = derived.ratios[idx];
+        let score = 50;
+        if (r.currentRatio >= 1.5) score += 12; else if (r.currentRatio >= 1.1) score += 6; else score -= 12;
+        if (r.debtToEquity <= 0.8) score += 12; else if (r.debtToEquity <= 1.5) score += 5; else score -= 10;
+        if (r.roe >= 0.15) score += 12; else if (r.roe >= 0.08) score += 6; else score -= 6;
+        if (r.ebitdaMargin >= 0.15) score += 7; else if (r.ebitdaMargin < 0.08) score -= 6;
+        const ocf = data.cf.ocf[idx];
+        const np = derived.netProfit[idx];
+        if (ocf > 0 && ocf >= np * 0.7) score += 10;
+        else if (ocf < 0) score -= 15;
+        else score -= 4;
+        return Math.max(10, Math.min(98, Math.round(score)));
+      }
+
+      function detectRisksAndVariance(data, derived) {
+        const alerts = [];
+        const n = data.periods.length;
+        if (!n) return alerts;
+        const last = n - 1, prev = n - 2;
+        const rLast = derived.ratios[last];
+
+        if (prev >= 0) {
+          const revChg = yoyPct(data.is.revenue, last);
+          const ebtChg = yoyPct(derived.ebt, last);
+          const sgaChg = data.is.sga[last] - data.is.sga[prev];
+          const intChg = data.is.interestExpense[last] - data.is.interestExpense[prev];
+
+          if (revChg > 0.02 && ebtChg < -0.02) {
+            const reasons = [];
+            if (rLast.grossMargin < derived.ratios[prev].grossMargin - 0.01) {
+              reasons.push(`biên gộp giảm từ ${fmtPct(derived.ratios[prev].grossMargin)} xuống ${fmtPct(rLast.grossMargin)}`);
+            }
+            if (sgaChg > 0) reasons.push(`chi phí BH & QLDN tăng +${fmtNum(sgaChg)} tỷ`);
+            if (intChg > 5) reasons.push(`lãi vay tăng +${fmtNum(intChg)} tỷ`);
+            alerts.push({
+              level: "danger",
+              title: `Nghịch lý: Doanh thu tăng ${fmtPct(revChg)} nhưng LNTT giảm ${fmtPct(Math.abs(ebtChg))}`,
+              desc: `Nguyên nhân: ${reasons.join("; ")}. Cần kiểm soát ngay giá vốn và định phí vận hành.`
+            });
+          } else if (revChg < -0.05 && derived.netProfit[last] > derived.netProfit[prev]) {
+            alerts.push({
+              level: "warn",
+              title: `Doanh thu giảm ${fmtPct(Math.abs(revChg))} nhưng LNST vẫn tăng mạnh`,
+              desc: `Thu nhập tài chính đạt ${fmtNum(data.is.finIncome[last])} tỷ — cần kiểm tra tính bền vững vì lợi nhuận không đến từ kinh doanh cốt lõi.`
+            });
+          }
+
+          const recChg = yoyPct(data.bs.receivables, last);
+          if (recChg !== null && revChg !== null && recChg > revChg + 0.08 && recChg > 0.1) {
+            alerts.push({
+              level: "warn",
+              title: `Công nợ phải thu tăng nhanh (+${fmtPct(recChg)} vs doanh thu ${fmtPct(revChg)})`,
+              desc: `Phải thu lên ${fmtNum(data.bs.receivables[last])} tỷ (DSO ~ ${fmtNum(rLast.dso, 0)} ngày). Rủi ro đọng vốn và nợ xấu.`
+            });
+          }
+          const invChg = yoyPct(data.bs.inventory, last);
+          if (invChg !== null && revChg !== null && invChg > revChg + 0.08 && invChg > 0.1) {
+            alerts.push({
+              level: "warn",
+              title: `Tồn kho tăng cao (+${fmtPct(invChg)})`,
+              desc: `Tồn kho đạt ${fmtNum(data.bs.inventory[last])} tỷ, vòng quay chỉ còn ${fmtNum(rLast.inventoryTurnover, 2)} vòng.`
+            });
+          }
+        }
+
+        const npLast = derived.netProfit[last], ocfLast = data.cf.ocf[last];
+        if (npLast > 0 && ocfLast < 0) {
+          alerts.push({
+            level: "danger",
+            title: `LNST dương (+${fmtNum(npLast)} tỷ) nhưng Dòng tiền kinh doanh âm (${fmtNum(ocfLast)} tỷ)`,
+            desc: `Lợi nhuận trên sổ sách chưa chuyển thành tiền thật. Kiểm tra ngay công nợ, tồn kho và thu nhập tài chính chưa thu tiền.`
+          });
+        } else if (npLast > 0 && ocfLast < npLast * 0.5) {
+          alerts.push({
+            level: "warn",
+            title: `Dòng tiền kinh doanh (${fmtNum(ocfLast)} tỷ) yếu hơn nhiều so với LNST (${fmtNum(npLast)} tỷ)`,
+            desc: `Tỷ lệ OCF/LNST chỉ đạt ${fmtPct(safeDiv(ocfLast, npLast))}. Vốn lưu động đang hút tiền mặt.`
+          });
+        }
+
+        if (n >= 3) {
+          const gm1 = derived.ratios[n - 3].grossMargin, gm2 = derived.ratios[n - 2].grossMargin, gm3 = derived.ratios[n - 1].grossMargin;
+          if (gm1 > gm2 && gm2 > gm3) {
+            alerts.push({
+              level: "danger",
+              title: `Cảnh báo xu hướng: Biên lợi nhuận gộp tụt giảm 3 kỳ liên tiếp`,
+              desc: `Giảm liên tục từ ${fmtPct(gm1)} → ${fmtPct(gm2)} → ${fmtPct(gm3)}.`
+            });
+          }
+        }
+
+        if (rLast.currentRatio < 1.1) {
+          alerts.push({
+            level: "danger",
+            title: `Áp lực thanh khoản ngắn hạn (Current Ratio = ${fmtNum(rLast.currentRatio, 2)}x)`,
+            desc: `Tài sản ngắn hạn sát hoặc thấp hơn nợ ngắn hạn.`
+          });
+        }
+        if (rLast.debtToEquity > 1.5) {
+          alerts.push({
+            level: "warn",
+            title: `Đòn bẩy nợ cao (D/E = ${fmtNum(rLast.debtToEquity, 2)}x)`,
+            desc: `Tổng nợ phải trả (${fmtNum(derived.totalLiabilities[last])} tỷ) vượt xa vốn chủ sở hữu (${fmtNum(data.bs.equity[last])} tỷ).`
+          });
+        }
+
+        if (!alerts.length) {
+          alerts.push({
+            level: "good",
+            title: "Cấu trúc tài chính cân bằng, chưa có cảnh báo đỏ nghiêm trọng",
+            desc: "Tiếp tục theo dõi sát biên lợi nhuận và dòng tiền kinh doanh các kỳ tiếp theo."
+          });
+        }
+        return alerts;
+      }
+
+      function buildForecast(data, derived, a) {
+        const last = data.periods.length - 1;
+        const baseRev = Number(data.is.revenue[last]) || 100;
+        const yNum = parseInt(String(data.periods[last]).replace(/\D/g, ""), 10);
+        const startY = (!isNaN(yNum) && yNum >= 2000 && yNum <= 2100) ? yNum : 2026;
+        const g = (Number(a.revGrowth) || 0) / 100, gm = (Number(a.grossMargin) || 0) / 100;
+        const opex = (Number(a.opexPct) || 0) / 100, dep = (Number(a.depPct) || 0) / 100;
+        const capexP = (Number(a.capexPct) || 0) / 100, taxR = (Number(a.taxRate) || 0) / 100, nwcP = (Number(a.nwcPct) || 0) / 100;
+
+        let prevRev = baseRev, prevNwc = derived.nwc[last];
+        const rows = [];
+        for (let y = 1; y <= 3; y++) {
+          const rev = prevRev * (1 + g);
+          const grossProfit = rev * gm;
+          const ebit = grossProfit - rev * opex;
+          const depreciation = rev * dep;
+          const ebitda = ebit + depreciation;
+          const ebt = ebit - (Number(data.is.interestExpense[last]) || 0);
+          const netProfit = ebt - (ebt > 0 ? ebt * taxR : 0);
+          const nwc = rev * nwcP;
+          const capex = rev * capexP;
+          const fcf = ebit * (1 - taxR) + depreciation - capex - (nwc - prevNwc);
+          rows.push({ label: `Dự báo ${startY + y}`, rev, grossProfit, ebit, ebitda, ebt, netProfit, nwc, capex, fcf });
+          prevRev = rev; prevNwc = nwc;
+        }
+        return rows;
+      }
+
+      function computeDcf(rows, netDebt, waccPct, termGPct, sharesMil) {
+        const wacc = (Number(waccPct) || 10) / 100, g = (Number(termGPct) || 3) / 100;
+        if (wacc <= g + 0.005) return { valid: false, error: "WACC phải lớn hơn g ít nhất 0.5%." };
+        let pvFcf = 0;
+        rows.forEach((r, idx) => { pvFcf += r.fcf / Math.pow(1 + wacc, idx + 1); });
+        const termVal = (rows[rows.length - 1].fcf * (1 + g)) / (wacc - g);
+        const pvTerm = termVal / Math.pow(1 + wacc, rows.length);
+        const ev = pvFcf + pvTerm;
+        const eqVal = ev - netDebt;
+        return { valid: true, ev, eqVal, pricePerShare: sharesMil > 0 ? eqVal / sharesMil : 0 };
+      }
+
+      function generateOfflineReport(data, derived, alerts, reportType) {
+        const last = data.periods.length - 1, prev = last - 1;
+        const r = derived.ratios[last];
+        const titles = {
+          bod: `BÁO CÁO PHÂN TÍCH TÀI CHÍNH TRÌNH BAN GIÁM ĐỐC — ${data.companyName}`,
+          monthly: `BÁO CÁO TÀI CHÍNH QUẢN TRỊ KỲ ${data.periods[last]} — ${data.companyName}`,
+          agm: `BÁO CÁO KẾT QUẢ TÀI CHÍNH TRÌNH ĐHCĐ — ${data.companyName}`
+        };
+        const revYoy = prev >= 0 ? fmtPct(yoyPct(data.is.revenue, last)) : "N/A";
+        const npYoy = prev >= 0 ? fmtPct(yoyPct(derived.netProfit, last)) : "N/A";
+        return `# ${titles[reportType] || titles.bod}
+Kỳ phân tích: ${data.periods[last]} | ĐVT: ${data.unit}
+
+## 1. TÓM TẮT ĐIỀU HÀNH
+- Doanh thu thuần: ${fmtNum(data.is.revenue[last])} tỷ (YoY: ${revYoy})
+- Lợi nhuận gộp: ${fmtNum(derived.grossProfit[last])} tỷ (Biên gộp: ${fmtPct(r.grossMargin)})
+- EBITDA: ${fmtNum(derived.ebitda[last])} tỷ (Biên EBITDA: ${fmtPct(r.ebitdaMargin)})
+- Lợi nhuận sau thuế: ${fmtNum(derived.netProfit[last])} tỷ (YoY: ${npYoy} | Biên ròng: ${fmtPct(r.netMargin)})
+- Dòng tiền kinh doanh (OCF): ${fmtNum(data.cf.ocf[last])} tỷ | FCF: ${fmtNum(derived.fcf[last])} tỷ
+
+## 2. CHỈ SỐ SỨC KHỎE TÀI CHÍNH
+- Current Ratio: ${fmtNum(r.currentRatio, 2)}x | Quick Ratio: ${fmtNum(r.quickRatio, 2)}x
+- D/E: ${fmtNum(r.debtToEquity, 2)}x | Nợ/Tổng TS: ${fmtPct(r.debtToAssets)}
+- ROA: ${fmtPct(r.roa)} | ROE: ${fmtPct(r.roe)} | Vòng quay TS: ${fmtNum(r.assetTurnover, 2)}x | DSO: ${fmtNum(r.dso, 0)} ngày
+
+## 3. BIẾN ĐỘNG & CẢNH BÁO RỦI RO
+${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.desc}`).join("\n")}
+
+## 4. KIẾN NGHỊ HÀNH ĐỘNG
+1. Bảo vệ biên lợi nhuận: Rà soát giá vốn và chi phí bán hàng/QLDN.
+2. Siết vốn lưu động: Đặt hạn mức phải thu (DSO) và giải phóng tồn kho chậm luân chuyển.
+3. Cân đối dòng tiền: Ưu tiên thu hồi tiền thực để thu hẹp khoảng cách giữa LNST và OCF.`;
+      }
+
+      return { safeDiv, fmtNum, fmtPct, yoyPct, computeDerived, computeHealthScore, detectRisksAndVariance, buildForecast, computeDcf, generateOfflineReport };
+    })();
+
+    // ================= 3. AI PROMPTS & API =================
+    window.AIPrompts = (function () {
+      const TEMPLATES = [
+        {
+          id: "variance",
+          title: "1. Giải thích biến động & Nguyên nhân gốc rễ",
+          basePrompt: `Bạn là Giám đốc Tài chính (CFO). Dựa trên số liệu BCTC đính kèm, hãy:\n1. Giải thích nguyên nhân biến động Doanh thu, Biên gộp, EBITDA và LNTT.\n2. Chỉ rõ vì sao lợi nhuận tăng/giảm lệch pha so với doanh thu.\n3. Đối chiếu LNST với Dòng tiền kinh doanh (OCF) để đánh giá chất lượng lợi nhuận.\n4. Đề xuất 3 câu hỏi quan trọng nhất Ban Giám đốc cần làm rõ ngay.`
+        },
+        {
+          id: "risks",
+          title: "2. Soát xét rủi ro & Dấu hiệu bất thường (Red Flags)",
+          basePrompt: `Bạn là Chuyên gia Quản trị Rủi ro Tài chính. Hãy:\n1. Phát hiện sớm xu hướng biên lợi nhuận tụt dần qua các kỳ.\n2. Soi bất thường ở Phải thu, Tồn kho, Chi phí lãi vay và Nợ ngắn hạn.\n3. Xếp hạng 3 rủi ro lớn nhất (Cao/TB/Thấp) kèm số liệu chứng minh.\n4. Đề xuất hành động xử lý trong 90 ngày.`
+        },
+        {
+          id: "bod_report",
+          title: "3. Viết Báo cáo Quản trị cho Ban Giám đốc / ĐHCĐ",
+          basePrompt: `Hãy viết bản Báo cáo Phân tích Tài chính súc tích trình Ban Giám đốc gồm:\n1. Tóm tắt nổi bật (3-5 ý có số liệu YoY và Kế hoạch).\n2. Cấu trúc tài chính & dòng tiền.\n3. Điểm nghẽn vận hành cần xử lý.\n4. Ưu tiên hành động quý tới kèm KPI.`
+        },
+        {
+          id: "forecast",
+          title: "4. Dự báo dòng tiền & Tối ưu vốn lưu động",
+          basePrompt: `Hãy xây dựng 3 kịch bản dự báo (Thận trọng / Cơ sở / Tích cực) cho năm tới về Doanh thu, EBITDA, LNTT, FCF và tính lượng tiền mặt giải phóng thêm nếu giảm DSO & tồn kho 15%.`
+        },
+        {
+          id: "valuation",
+          title: "5. So sánh cùng ngành & Định giá (DCF, Multiples)",
+          basePrompt: `Hãy đánh giá vị thế doanh nghiệp so với ngành, nhận xét mức định giá hợp lý theo DCF, EV/EBITDA, P/E, P/B và chỉ ra biến số nhạy cảm nhất cần theo dõi.`
+        }
+      ];
+
+      function buildContext(data, derived, alerts) {
+        const F = window.FinanceEngine;
+        const row = (l, arr) => `- ${l}: ${arr.map(v => F.fmtNum(v, 1)).join(" | ")}`;
+        const rRow = (l, k, pct) => `- ${l}: ${derived.ratios.map(r => pct ? F.fmtPct(r[k], 1) : F.fmtNum(r[k], 2)).join(" | ")}`;
+        return `[BCTC: ${data.companyName} | ĐVT: ${data.unit}]\nKỳ: ${data.periods.join(" | ")}\n\nKQKD:\n${row("Doanh thu", data.is.revenue)}\n${row("LN gộp", derived.grossProfit)}\n${row("BH & QLDN", data.is.sga)}\n${row("EBITDA", derived.ebitda)}\n${row("Thu nhập TC", data.is.finIncome)}\n${row("Lãi vay", data.is.interestExpense)}\n${row("LNTT", derived.ebt)}\n${row("LNST", derived.netProfit)}\n\nCĐKT & LCTT:\n${row("Tổng TS", derived.totalAssets)}\n${row("Tiền", data.bs.cash)}\n${row("Phải thu", data.bs.receivables)}\n${row("Tồn kho", data.bs.inventory)}\n${row("Tổng nợ", derived.totalLiabilities)}\n${row("VCSH", data.bs.equity)}\n${row("OCF", data.cf.ocf)}\n${row("FCF", derived.fcf)}\n\nChỉ số:\n${rRow("Current Ratio", "currentRatio", false)}\n${rRow("D/E", "debtToEquity", false)}\n${rRow("Biên gộp", "grossMargin", true)}\n${rRow("Biên EBITDA", "ebitdaMargin", true)}\n${rRow("ROE", "roe", true)}\n\nCảnh báo sơ bộ:\n${alerts.map(a => `* ${a.title}`).join("\n")}`;
+      }
+
+      function getContextualizedPrompt(taskId, data, derived, alerts, customQ) {
+        const tpl = TEMPLATES.find(t => t.id === taskId) || TEMPLATES[0];
+        const extra = customQ && customQ.trim() ? `\n\nYêu cầu bổ sung: ${customQ.trim()}` : "";
+        return `${tpl.basePrompt}${extra}\n\n---\n${buildContext(data, derived, alerts)}`;
+      }
+
+      async function callAiApi({ provider, apiKey, prompt }) {
+        if (!apiKey || !apiKey.trim()) throw new Error("Vui lòng nhập API Key, hoặc dùng nút Copy kèm số liệu bên dưới để dán sang Claude/ChatGPT/Gemini miễn phí.");
+        const key = apiKey.trim();
+        if (provider === "gemini") {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          });
+          const j = await res.json();
+          if (!res.ok) throw new Error(j?.error?.message || `Lỗi Gemini API (${res.status})`);
+          return j?.candidates?.[0]?.content?.parts?.[0]?.text || "Không có phản hồi.";
+        }
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: "Bạn là chuyên gia phân tích tài chính doanh nghiệp (CFO), trả lời bằng tiếng Việt rõ ràng, có số liệu." },
+              { role: "user", content: prompt }
+            ]
+          })
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j?.error?.message || `Lỗi OpenAI API (${res.status})`);
+        return j?.choices?.[0]?.message?.content || "Không có phản hồi.";
+      }
+
+      return { TEMPLATES, getContextualizedPrompt, callAiApi };
+    })();
+
+    // ================= 4. APP CONTROLLER =================
+    (function () {
+      const STORAGE_KEY = "ai_bctc_personal_v2_data";
+      const AI_CFG_KEY = "ai_bctc_personal_v2_aicfg";
+      const F = window.FinanceEngine;
+
+      const TAB_META = {
+        "tab-dashboard": ["Dashboard Tổng quan", "Điểm sức khỏe tài chính, KPI cốt lõi và biểu đồ điều hành tự động"],
+        "tab-statements": ["BCTC & Phân tích Ngang / Dọc", "Chỉnh sửa số liệu trực tiếp · Tự động lưu trên trình duyệt"],
+        "tab-ratios": ["Chỉ số Tài chính & Cảnh báo Rủi ro", "13 chỉ số cốt lõi và bộ quét Red Flags tự động"],
+        "tab-forecast": ["Dự báo Tài chính 3 năm", "Mô phỏng Doanh thu, EBITDA, LNTT, Vốn lưu động và FCF"],
+        "tab-valuation": ["So sánh ngành & Định giá", "Định giá DCF (bảng độ nhạy WACC & g) và bội số EV/EBITDA, P/E, P/B"],
+        "tab-ai": ["Báo cáo Quản trị & Trợ lý AI", "Tạo báo cáo offline, copy prompt kèm số liệu hoặc gọi AI API trực tiếp"],
+        "tab-learning": ["5 Module Nền tảng Đọc hiểu BCTC", "Tra cứu nhanh để kiểm chứng kết quả phân tích của AI"]
+      };
+
+      const state = {
+        sampleKey: "sample_5y",
+        data: null,
+        derived: null,
+        alerts: [],
+        statementType: "is",
+        analysisMode: "abs",
+        charts: { trend: null, waterfall: null, variance: null, forecast: null, peer: null }
+      };
+
+      const deepClone = o => JSON.parse(JSON.stringify(o));
+      const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      function showStatus(msg, type = "good") {
+        const el = document.getElementById("globalStatus");
+        if (!el) return;
+        el.textContent = msg;
+        el.className = "toast-banner" + (type === "error" ? " error" : type === "warn" ? " warn" : "");
+        el.classList.remove("hidden");
+        clearTimeout(showStatus._t);
+        showStatus._t = setTimeout(() => el.classList.add("hidden"), 4200);
+      }
+
+      function saveLocal() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ sampleKey: state.sampleKey, data: state.data })); } catch (e) {}
+      }
+
+      function loadInitial() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const p = JSON.parse(raw);
+            if (p && p.data && p.data.periods && p.data.is) {
+              state.sampleKey = p.sampleKey || "custom";
+              state.data = p.data;
+              return;
+            }
+          }
+        } catch (e) {}
+        state.sampleKey = "sample_5y";
+        state.data = deepClone(window.BCTC_SAMPLES.sample_5y);
+      }
+
+      function loadAiCfg() {
+        try {
+          const c = JSON.parse(localStorage.getItem(AI_CFG_KEY) || "{}");
+          if (c.provider) document.getElementById("aiProviderSelect").value = c.provider;
+          if (c.apiKey) document.getElementById("aiApiKeyInput").value = c.apiKey;
+        } catch (e) {}
+      }
+
+      function destroyChart(k) {
+        if (state.charts[k]) { state.charts[k].destroy(); state.charts[k] = null; }
+      }
+
+      function recomputeAll() {
+        state.derived = F.computeDerived(state.data);
+        state.alerts = F.detectRisksAndVariance(state.data, state.derived);
+        saveLocal();
+
+        document.getElementById("companySelect").value = state.sampleKey;
+        document.getElementById("companyNameInput").value = state.data.companyName || "";
+
+        const pSel = document.getElementById("dashboardPeriodSelect");
+        const oldVal = pSel.value;
+        pSel.innerHTML = state.data.periods.map((p, i) => `<option value="${i}">${p}</option>`).join("");
+        pSel.value = (oldVal !== "" && Number(oldVal) < state.data.periods.length) ? oldVal : String(state.data.periods.length - 1);
+
+        renderDashboard();
+        renderStatementTable();
+        renderBudgetInputs();
+        renderRatiosAndRisks();
+        updateForecast();
+        updateValuationAndPeer();
+        renderPromptLibrary();
+      }
+
+      function renderDashboard() {
+        const d = state.data, drv = state.derived;
+        const idx = Number(document.getElementById("dashboardPeriodSelect").value || (d.periods.length - 1));
+        const r = drv.ratios[idx];
+
+        // Health score
+        const score = F.computeHealthScore(d, drv, idx);
+        document.getElementById("healthScoreVal").textContent = score;
+        const bar = document.getElementById("healthBarFill");
+        bar.style.width = score + "%";
+        if (score >= 75) {
+          bar.style.background = "#10b981";
+          document.getElementById("healthVerdictText").textContent = "Sức khỏe tài chính TỐT — cấu trúc cân đối, dòng tiền và khả năng sinh lời ổn định.";
+        } else if (score >= 55) {
+          bar.style.background = "#f59e0b";
+          document.getElementById("healthVerdictText").textContent = "Mức TRUNG BÌNH / CẦN THEO DÕI — chú ý biên lợi nhuận, đòn bẩy hoặc dòng tiền kinh doanh.";
+        } else {
+          bar.style.background = "#ef4444";
+          document.getElementById("healthVerdictText").textContent = "CẢNH BÁO RỦI RO CAO — cần rà soát ngay dòng tiền, công nợ và cấu trúc chi phí.";
+        }
+
+        const yoy = arr => {
+          const p = F.yoyPct(arr, idx);
+          if (p === null) return { text: "Kỳ cơ sở", cls: "neutral" };
+          return { text: `${p >= 0 ? "▲ +" : "▼ "}${F.fmtPct(Math.abs(p))} YoY`, cls: p >= 0 ? "up" : "down" };
+        };
+
+        const kpis = [
+          { label: "Doanh thu thuần", val: `${F.fmtNum(d.is.revenue[idx])} tỷ`, sub: yoy(d.is.revenue), dot: "" },
+          { label: "EBITDA & Biên", val: `${F.fmtNum(drv.ebitda[idx])} tỷ`, sub: { text: `Biên EBITDA: ${F.fmtPct(r.ebitdaMargin)}`, cls: r.ebitdaMargin >= 0.15 ? "up" : "neutral" }, dot: r.ebitdaMargin >= 0.15 ? "good" : "warn" },
+          { label: "Lợi nhuận sau thuế", val: `${F.fmtNum(drv.netProfit[idx])} tỷ`, sub: yoy(drv.netProfit), dot: drv.netProfit[idx] >= 0 ? "good" : "danger" },
+          { label: "Dòng tiền KD (OCF)", val: `${F.fmtNum(d.cf.ocf[idx])} tỷ`, sub: { text: d.cf.ocf[idx] >= 0 ? "Dòng tiền dương" : "Cảnh báo dòng tiền âm", cls: d.cf.ocf[idx] >= 0 ? "up" : "down" }, dot: d.cf.ocf[idx] < 0 ? "danger" : "good" },
+          { label: "Tổng Tài sản & D/E", val: `${F.fmtNum(drv.totalAssets[idx])} tỷ`, sub: { text: `D/E: ${F.fmtNum(r.debtToEquity, 2)}x · CR: ${F.fmtNum(r.currentRatio, 2)}x`, cls: r.debtToEquity > 1.5 ? "down" : "neutral" }, dot: r.debtToEquity > 1.5 ? "warn" : "good" },
+          { label: "Sinh lời (ROE / ROA)", val: F.fmtPct(r.roe), sub: { text: `ROA: ${F.fmtPct(r.roa)} · Biên gộp: ${F.fmtPct(r.grossMargin)}`, cls: r.roe >= 0.15 ? "up" : "neutral" }, dot: r.roe >= 0.15 ? "good" : "" }
+        ];
+
+        document.getElementById("kpiGrid").innerHTML = kpis.map(k => `
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">${k.label}</span><span class="kpi-dot ${k.dot}"></span></div>
+            <div class="kpi-value">${k.val}</div>
+            <div class="kpi-sub ${k.sub.cls}">${k.sub.text}</div>
           </div>
-          <div class="chart-wrap">
-            <canvas id="trendChart"></canvas>
-          </div>
-        </div>
+        `).join("");
 
-        <div class="card chart-card">
-          <div class="card-header">
-            <h3>Cầu lợi nhuận (Profit Bridge / Waterfall)</h3>
-            <span class="badge">Waterfall</span>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="waterfallChart"></canvas>
-          </div>
-        </div>
+        document.getElementById("dashboardHighlights").innerHTML = state.alerts.slice(0, 3).map(a => `
+          <div class="alert-item ${a.level}"><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div></div>
+        `).join("");
 
-        <div class="card chart-card">
-          <div class="card-header">
-            <h3>Phân tích biến động (Thực tế vs Kế hoạch / Kỳ trước)</h3>
-            <span class="badge">Variance Analysis</span>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="varianceChart"></canvas>
-          </div>
-        </div>
-      </div>
+        if (typeof Chart === "undefined") return;
 
-      <div class="card">
-        <div class="card-header">
-          <h3>Tóm tắt nhanh các dấu hiệu nổi bật</h3>
-          <button class="btn btn-sm btn-outline" onclick="window.switchTab('tab-ratios')">Xem chi tiết rủi ro →</button>
-        </div>
-        <div id="dashboardHighlights" class="alerts-list"></div>
-      </div>
-    </section>
+        // Trend chart
+        destroyChart("trend");
+        state.charts.trend = new Chart(document.getElementById("trendChart").getContext("2d"), {
+          type: "bar",
+          data: {
+            labels: d.periods,
+            datasets: [
+              { label: "Doanh thu (tỷ)", data: d.is.revenue, backgroundColor: "rgba(37, 99, 235, 0.85)", borderRadius: 6, yAxisID: "y" },
+              { label: "EBITDA (tỷ)", data: drv.ebitda, backgroundColor: "rgba(245, 158, 11, 0.85)", borderRadius: 6, yAxisID: "y" },
+              { label: "LNST (tỷ)", data: drv.netProfit, backgroundColor: "rgba(16, 185, 129, 0.85)", borderRadius: 6, yAxisID: "y" },
+              { label: "Biên gộp (%)", data: drv.ratios.map(x => +(x.grossMargin * 100).toFixed(1)), type: "line", borderColor: "#dc2626", backgroundColor: "#dc2626", tension: 0.35, borderWidth: 2.5, yAxisID: "y1" },
+              { label: "Biên ròng (%)", data: drv.ratios.map(x => +(x.netMargin * 100).toFixed(1)), type: "line", borderColor: "#0ea5e9", backgroundColor: "#0ea5e9", tension: 0.35, borderWidth: 2.5, yAxisID: "y1" }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              y: { position: "left", grid: { color: "#f1f5f9" }, title: { display: true, text: "Tỷ đồng" } },
+              y1: { position: "right", grid: { drawOnChartArea: false }, title: { display: true, text: "Biên (%)" } }
+            }
+          }
+        });
 
-    <!-- TAB 2: BCTC & PHÂN TÍCH NGANG / DỌC -->
-    <section id="tab-statements" class="tab-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Dữ liệu BCTC & Phân tích Ngang / Dọc</h2>
-          <p class="muted">Bấm trực tiếp vào các ô số ở chế độ "Số tuyệt đối" để sửa số liệu. Tự động lưu trên trình duyệt.</p>
-        </div>
-        <div class="inline-controls">
-          <button class="btn btn-sm btn-outline" onclick="window.addNewPeriod()">➕ Thêm kỳ/năm</button>
-          <button class="btn btn-sm btn-outline" onclick="window.resetToCurrentSample()">🔄 Khôi phục mẫu</button>
-        </div>
-      </div>
+        // Waterfall
+        destroyChart("waterfall");
+        const rev = d.is.revenue[idx], cogs = d.is.cogs[idx], sga = d.is.sga[idx];
+        const finNet = (d.is.finIncome[idx] || 0) - (d.is.interestExpense[idx] || 0) + (d.is.otherProfit[idx] || 0);
+        const tax = d.is.taxExpense[idx], np = drv.netProfit[idx];
+        const wfData = [
+          [0, rev], [rev - cogs, rev], [rev - cogs - sga, rev - cogs],
+          [Math.min(rev - cogs - sga, rev - cogs - sga + finNet), Math.max(rev - cogs - sga, rev - cogs - sga + finNet)],
+          [np, np + tax], [0, np]
+        ];
+        state.charts.waterfall = new Chart(document.getElementById("waterfallChart").getContext("2d"), {
+          type: "bar",
+          data: {
+            labels: ["Doanh thu", "Giá vốn", "BH & QLDN", "TC & Khác", "Thuế", "LNST"],
+            datasets: [{ data: wfData, borderRadius: 6, backgroundColor: ["#2563eb", "#ef4444", "#f97316", finNet >= 0 ? "#10b981" : "#ef4444", "#eab308", "#059669"] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
 
-      <div class="subtab-bar">
-        <div class="pill-group">
-          <button class="pill-btn active" id="stmt-is" onclick="window.setStatementType('is')">Kết quả kinh doanh (KQKD)</button>
-          <button class="pill-btn" id="stmt-bs" onclick="window.setStatementType('bs')">Bảng cân đối kế toán (CĐKT)</button>
-          <button class="pill-btn" id="stmt-cf" onclick="window.setStatementType('cf')">Lưu chuyển tiền tệ (LCTT)</button>
-        </div>
-        <div class="pill-group">
-          <button class="pill-btn active" id="mode-abs" onclick="window.setAnalysisMode('abs')">Số tuyệt đối (tỷ)</button>
-          <button class="pill-btn" id="mode-vertical" onclick="window.setAnalysisMode('vertical')">Phân tích dọc (%)</button>
-          <button class="pill-btn" id="mode-horizontal" onclick="window.setAnalysisMode('horizontal')">Phân tích ngang (% YoY)</button>
-        </div>
-      </div>
+        // Variance
+        destroyChart("variance");
+        const b = d.budgetLatest || {};
+        state.charts.variance = new Chart(document.getElementById("varianceChart").getContext("2d"), {
+          type: "bar",
+          data: {
+            labels: ["Doanh thu", "LN gộp", "EBITDA", "LNTT", "LNST", "OCF"],
+            datasets: [
+              { label: `Thực tế (${d.periods[idx]})`, data: [d.is.revenue[idx], drv.grossProfit[idx], drv.ebitda[idx], drv.ebt[idx], drv.netProfit[idx], d.cf.ocf[idx]], backgroundColor: "#2563eb", borderRadius: 5 },
+              { label: "Kế hoạch", data: [b.revenue || d.is.revenue[idx], b.grossProfit || drv.grossProfit[idx], b.ebitda || drv.ebitda[idx], b.ebt || drv.ebt[idx], b.netProfit || drv.netProfit[idx], b.ocf || d.cf.ocf[idx]], backgroundColor: "#cbd5e1", borderRadius: 5 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
 
-      <div class="card">
-        <div class="table-responsive">
-          <table id="statementTable" class="data-table"></table>
-        </div>
-      </div>
+      const STATEMENT_DEFS = {
+        is: [
+          { key: "revenue", label: "Doanh thu thuần", editable: true, highlight: true },
+          { key: "cogs", label: "Giá vốn hàng bán", editable: true },
+          { key: "_gp", label: "Lợi nhuận gộp", derivedKey: "grossProfit", highlight: true },
+          { key: "sga", label: "Chi phí Bán hàng & QLDN", editable: true },
+          { key: "_ebit", label: "Lợi nhuận thuần HĐKD (EBIT)", derivedKey: "ebit", highlight: true },
+          { key: "depreciation", label: "Khấu hao TSCĐ", editable: true },
+          { key: "_ebitda", label: "EBITDA", derivedKey: "ebitda", highlight: true },
+          { key: "finIncome", label: "Thu nhập tài chính", editable: true },
+          { key: "interestExpense", label: "Chi phí lãi vay", editable: true },
+          { key: "otherProfit", label: "Lợi nhuận khác", editable: true },
+          { key: "_ebt", label: "Lợi nhuận trước thuế (LNTT)", derivedKey: "ebt", highlight: true },
+          { key: "taxExpense", label: "Chi phí thuế TNDN", editable: true },
+          { key: "_np", label: "Lợi nhuận sau thuế (LNST)", derivedKey: "netProfit", highlight: true }
+        ],
+        bs: [
+          { section: "A. TÀI SẢN NGẮN HẠN" },
+          { key: "cash", label: "Tiền & tương đương tiền", editable: true },
+          { key: "receivables", label: "Phải thu ngắn hạn", editable: true },
+          { key: "inventory", label: "Hàng tồn kho", editable: true },
+          { key: "otherCurrent", label: "Tài sản ngắn hạn khác", editable: true },
+          { key: "_ca", label: "Tổng Tài sản ngắn hạn", derivedKey: "currentAssets", highlight: true },
+          { section: "B. TÀI SẢN DÀI HẠN" },
+          { key: "fixedAssets", label: "Tài sản cố định", editable: true },
+          { key: "longTermInvest", label: "Đầu tư dài hạn / Công ty con", editable: true },
+          { key: "otherNonCurrent", label: "Tài sản dài hạn khác", editable: true },
+          { key: "_ta", label: "TỔNG TÀI SẢN", derivedKey: "totalAssets", highlight: true },
+          { section: "C. NGUỒN VỐN" },
+          { key: "shortTermDebt", label: "Vay ngắn hạn", editable: true },
+          { key: "payables", label: "Phải trả người bán & nợ ngắn hạn khác", editable: true },
+          { key: "longTermDebt", label: "Vay dài hạn", editable: true },
+          { key: "_tl", label: "Tổng Nợ phải trả", derivedKey: "totalLiabilities", highlight: true },
+          { key: "equity", label: "Vốn chủ sở hữu", editable: true, highlight: true }
+        ],
+        cf: [
+          { key: "ocf", label: "Dòng tiền HĐ Kinh doanh (OCF)", editable: true, highlight: true },
+          { key: "icf", label: "Dòng tiền HĐ Đầu tư (ICF)", editable: true },
+          { key: "fcfFin", label: "Dòng tiền HĐ Tài chính", editable: true },
+          { key: "capex", label: "Chi mua sắm TSCĐ (CAPEX)", editable: true },
+          { key: "_fcf", label: "Dòng tiền tự do (FCF = OCF − CAPEX)", derivedKey: "fcf", highlight: true }
+        ]
+      };
 
-      <div class="card">
-        <div class="card-header">
-          <h3>Ngân sách / Kế hoạch kỳ gần nhất (Dùng cho Variance Analysis)</h3>
-          <span class="muted">Nhập số kế hoạch để so sánh Thực tế vs Kế hoạch</span>
-        </div>
-        <div id="budgetInputsGrid" class="form-grid-4"></div>
-      </div>
-    </section>
+      function renderStatementTable() {
+        const d = state.data, drv = state.derived, type = state.statementType, mode = state.analysisMode;
+        let html = `<thead><tr><th>Chỉ tiêu (${mode === "abs" ? d.unit : mode === "vertical" ? "% cơ cấu" : "% YoY"})</th>${d.periods.map(p => `<th>${p}</th>`).join("")}</tr></thead><tbody>`;
+        STATEMENT_DEFS[type].forEach(row => {
+          if (row.section) { html += `<tr class="row-section"><td colspan="${d.periods.length + 1}">${row.section}</td></tr>`; return; }
+          const arr = row.derivedKey ? drv[row.derivedKey] : d[type][row.key];
+          const base = type === "bs" ? drv.totalAssets : d.is.revenue;
+          html += `<tr class="${row.highlight ? "row-highlight" : ""}"><td>${row.label}</td>`;
+          d.periods.forEach((_, i) => {
+            if (mode === "abs") {
+              html += row.editable ? `<td><input class="cell-input" type="number" step="0.1" value="${arr[i]}" onchange="window.onCellEdit('${type}','${row.key}',${i},this.value)" /></td>` : `<td>${F.fmtNum(arr[i], 1)}</td>`;
+            } else if (mode === "vertical") {
+              html += `<td>${F.fmtPct(F.safeDiv(arr[i], base[i]), 1)}</td>`;
+            } else {
+              const y = F.yoyPct(arr, i);
+              html += y === null ? `<td class="muted">—</td>` : `<td class="${y >= 0 ? "num-pos" : "num-neg"}">${y >= 0 ? "+" : ""}${F.fmtPct(y, 1)}</td>`;
+            }
+          });
+          html += `</tr>`;
+        });
+        document.getElementById("statementTable").innerHTML = html + `</tbody>`;
+      }
 
-    <!-- TAB 3: CHỈ SỐ & CẢNH BÁO RỦI RO -->
-    <section id="tab-ratios" class="tab-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Hệ thống Chỉ số Tài chính & Cảnh báo Rủi ro</h2>
-          <p class="muted">Tự động tính 13 chỉ số cốt lõi, giải thích biến động và quét dấu hiệu bất thường (Red Flags).</p>
-        </div>
-      </div>
+      function renderBudgetInputs() {
+        const b = state.data.budgetLatest || {};
+        const fields = [
+          ["revenue", "KH Doanh thu"], ["grossProfit", "KH LN gộp"], ["ebitda", "KH EBITDA"],
+          ["ebt", "KH LNTT"], ["netProfit", "KH LNST"], ["ocf", "KH OCF"]
+        ];
+        document.getElementById("budgetInputsGrid").innerHTML = fields.map(([k, l]) => `
+          <div class="input-box"><label>${l} (tỷ)</label><input type="number" step="1" value="${b[k] ?? 0}" onchange="window.onBudgetEdit('${k}',this.value)" /></div>
+        `).join("");
+      }
 
-      <div class="card">
-        <div class="card-header">
-          <h3>🚨 Giải thích biến động & Cảnh báo rủi ro tự động</h3>
-          <span class="badge badge-warn">Auto Red-Flag Engine</span>
-        </div>
-        <div id="riskAlertsContainer" class="alerts-list"></div>
-      </div>
+      function renderRatiosAndRisks() {
+        document.getElementById("riskAlertsContainer").innerHTML = state.alerts.map(a => `
+          <div class="alert-item ${a.level}"><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div></div>
+        `).join("");
 
-      <div class="card">
-        <div class="card-header">
-          <h3>Bảng tổng hợp Chỉ số Tài chính qua các kỳ</h3>
-          <span class="muted">Đánh giá dựa trên kỳ gần nhất</span>
-        </div>
-        <div class="table-responsive">
-          <table id="ratiosTable" class="data-table"></table>
-        </div>
-      </div>
-    </section>
+        const d = state.data, ratios = state.derived.ratios, last = ratios[ratios.length - 1];
+        const defs = [
+          { section: "1. THANH TOÁN" },
+          { k: "currentRatio", l: "Current Ratio", f: v => F.fmtNum(v, 2) + "x", e: v => v >= 1.3 ? ["Tốt", "good"] : v >= 1 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
+          { k: "quickRatio", l: "Quick Ratio", f: v => F.fmtNum(v, 2) + "x", e: v => v >= 1 ? ["Tốt", "good"] : v >= 0.7 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
+          { section: "2. ĐÒN BẨY" },
+          { k: "debtToEquity", l: "D/E (Tổng nợ / VCSH)", f: v => F.fmtNum(v, 2) + "x", e: v => v <= 1 ? ["An toàn", "good"] : v <= 1.5 ? ["Trung bình", "warn"] : ["Cao", "danger"] },
+          { k: "debtToAssets", l: "Nợ / Tổng Tài sản", f: v => F.fmtPct(v, 1), e: v => v <= 0.5 ? ["An toàn", "good"] : v <= 0.65 ? ["Theo dõi", "warn"] : ["Cao", "danger"] },
+          { k: "icr", l: "Khả năng trả lãi (ICR)", f: v => v > 50 ? ">50x" : F.fmtNum(v, 1) + "x", e: v => v >= 4 ? ["Tốt", "good"] : v >= 2 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
+          { section: "3. SINH LỜI" },
+          { k: "grossMargin", l: "Biên LN gộp", f: v => F.fmtPct(v, 1), e: v => v >= 0.25 ? ["Tốt", "good"] : v >= 0.15 ? ["TB", "warn"] : ["Mỏng", "danger"] },
+          { k: "ebitdaMargin", l: "Biên EBITDA", f: v => F.fmtPct(v, 1), e: v => v >= 0.15 ? ["Tốt", "good"] : v >= 0.08 ? ["TB", "warn"] : ["Thấp", "danger"] },
+          { k: "netMargin", l: "Biên LN ròng", f: v => F.fmtPct(v, 1), e: v => v >= 0.1 ? ["Tốt", "good"] : v >= 0.05 ? ["TB", "warn"] : ["Thấp", "danger"] },
+          { k: "roa", l: "ROA", f: v => F.fmtPct(v, 1), e: v => v >= 0.07 ? ["Tốt", "good"] : v >= 0.03 ? ["TB", "warn"] : ["Thấp", "danger"] },
+          { k: "roe", l: "ROE", f: v => F.fmtPct(v, 1), e: v => v >= 0.15 ? ["Tốt", "good"] : v >= 0.08 ? ["TB", "warn"] : ["Thấp", "danger"] },
+          { section: "4. HIỆU QUẢ HOẠT ĐỘNG" },
+          { k: "assetTurnover", l: "Vòng quay tài sản", f: v => F.fmtNum(v, 2) + "x", e: v => v >= 0.8 ? ["Tốt", "good"] : ["Chậm", "warn"] },
+          { k: "inventoryTurnover", l: "Vòng quay tồn kho", f: v => F.fmtNum(v, 2) + "x", e: v => v >= 4 ? ["Nhanh", "good"] : v >= 2 ? ["TB", "warn"] : ["Chậm", "danger"] },
+          { k: "dso", l: "Số ngày thu tiền (DSO)", f: v => F.fmtNum(v, 0) + " ngày", e: v => v <= 60 ? ["Tốt", "good"] : v <= 90 ? ["Theo dõi", "warn"] : ["Chậm", "danger"] }
+        ];
+        let html = `<thead><tr><th>Chỉ số</th>${d.periods.map(p => `<th>${p}</th>`).join("")}<th>Đánh giá</th></tr></thead><tbody>`;
+        defs.forEach(def => {
+          if (def.section) { html += `<tr class="row-section"><td colspan="${d.periods.length + 2}">${def.section}</td></tr>`; return; }
+          const [txt, tone] = def.e(last[def.k]);
+          html += `<tr><td>${def.l}</td>${ratios.map(r => `<td>${def.f(r[def.k])}</td>`).join("")}<td><span class="badge badge-${tone}">${txt}</span></td></tr>`;
+        });
+        document.getElementById("ratiosTable").innerHTML = html + `</tbody>`;
+      }
 
-    <!-- TAB 4: DỰ BÁO TÀI CHÍNH -->
-    <section id="tab-forecast" class="tab-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Dự báo Tài chính 3 năm tới (Forecasting)</h2>
-          <p class="muted">Điều chỉnh các giả định bên dưới để mô phỏng Doanh thu, EBITDA, LNTT, Vốn lưu động và Dòng tiền tự do (FCF).</p>
-        </div>
-        <button class="btn btn-sm btn-outline" onclick="window.resetForecastAssumptions()">🔄 Đặt lại giả định mặc định</button>
-      </div>
+      function getFcInputs() {
+        return {
+          revGrowth: +document.getElementById("fcRevGrowth").value,
+          grossMargin: +document.getElementById("fcGrossMargin").value,
+          opexPct: +document.getElementById("fcOpexPct").value,
+          depPct: +document.getElementById("fcDepPct").value,
+          capexPct: +document.getElementById("fcCapexPct").value,
+          taxRate: +document.getElementById("fcTaxRate").value,
+          nwcPct: +document.getElementById("fcNwcPct").value
+        };
+      }
 
-      <div class="card">
-        <div class="card-header">
-          <h3>Giả định mô hình dự báo</h3>
-        </div>
-        <div class="form-grid-3" id="forecastControls">
-          <div class="input-box">
-            <label for="fcRevGrowth">Tăng trưởng doanh thu / năm (%)</label>
-            <input type="number" step="0.5" id="fcRevGrowth" value="12" oninput="window.updateForecast()" />
-          </div>
-          <div class="input-box">
-            <label for="fcGrossMargin">Biên lợi nhuận gộp mục tiêu (%)</label>
-            <input type="number" step="0.5" id="fcGrossMargin" value="28" oninput="window.updateForecast()" />
-          </div>
-          <div class="input-box">
-            <label for="fcOpexPct">CP Bán hàng & QLDN / Doanh thu (%)</label>
-            <input type="number" step="0.5" id="fcOpexPct" value="14" oninput="window.updateForecast()" />
-          </div>
-          <div class="input-box">
-            <label for="fcDepPct">Khấu hao / Doanh thu (%)</label>
-            <input type="number" step="0.5" id="fcDepPct" value="3.5" oninput="window.updateForecast()" />
-          </div>
-          <div class="input-box">
-            <label for="fcCapexPct">CAPEX (Đầu tư TSCĐ) / Doanh thu (%)</label>
-            <input type="number" step="0.5" id="fcCapexPct" value="4" oninput="window.updateForecast()" />
-          </div>
-          <div class="input-box">
-            <label for="fcTaxRate">Thuế suất TNDN (%)</label>
-            <input type="number" step="0.5" id="fcTaxRate" value="20" oninput="window.updateForecast()" />
-          </div>
-          <div class="input-box">
-            <label for="fcNwcPct">Vốn lưu động ròng / Doanh thu (%)</label>
-            <input type="number" step="0.5" id="fcNwcPct" value="15" oninput="window.updateForecast()" />
-          </div>
-        </div>
-      </div>
+      function updateForecast() {
+        const rows = F.buildForecast(state.data, state.derived, getFcInputs());
+        state.forecastRows = rows;
+        const m = [
+          ["Doanh thu dự báo", "rev", true], ["Lợi nhuận gộp", "grossProfit", false], ["EBIT", "ebit", false],
+          ["EBITDA", "ebitda", true], ["LNTT", "ebt", false], ["LNST", "netProfit", true],
+          ["Vốn lưu động (NWC)", "nwc", false], ["CAPEX", "capex", false], ["Dòng tiền tự do (FCF)", "fcf", true]
+        ];
+        let html = `<thead><tr><th>Chỉ tiêu (tỷ)</th>${rows.map(r => `<th>${r.label}</th>`).join("")}</tr></thead><tbody>`;
+        m.forEach(([l, k, hl]) => { html += `<tr class="${hl ? "row-highlight" : ""}"><td>${l}</td>${rows.map(r => `<td>${F.fmtNum(r[k], 1)}</td>`).join("")}</tr>`; });
+        document.getElementById("forecastTable").innerHTML = html + `</tbody>`;
 
-      <div class="charts-grid">
-        <div class="card chart-card full-width">
-          <div class="card-header">
-            <h3>Biểu đồ Dự báo Doanh thu, EBITDA & Dòng tiền tự do (FCF)</h3>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="forecastChart"></canvas>
-          </div>
-        </div>
-      </div>
+        if (typeof Chart !== "undefined") {
+          destroyChart("forecast");
+          const last = state.data.periods.length - 1;
+          state.charts.forecast = new Chart(document.getElementById("forecastChart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: [state.data.periods[last], ...rows.map(r => r.label)],
+              datasets: [
+                { label: "Doanh thu", data: [state.data.is.revenue[last], ...rows.map(r => r.rev)], backgroundColor: "#2563eb", borderRadius: 6 },
+                { label: "EBITDA", data: [state.derived.ebitda[last], ...rows.map(r => r.ebitda)], backgroundColor: "#f59e0b", borderRadius: 6 },
+                { label: "FCF", data: [state.derived.fcf[last], ...rows.map(r => r.fcf)], type: "line", borderColor: "#059669", backgroundColor: "#059669", borderWidth: 3, tension: 0.3 }
+              ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+        updateValuationAndPeer();
+      }
 
-      <div class="card">
-        <div class="card-header">
-          <h3>Bảng kết quả Dự báo chi tiết (Tỷ đồng)</h3>
-        </div>
-        <div class="table-responsive">
-          <table id="forecastTable" class="data-table"></table>
-        </div>
-      </div>
-    </section>
+      function updateValuationAndPeer() {
+        const last = state.data.periods.length - 1;
+        const r = state.derived.ratios[last];
+        const rows = state.forecastRows || F.buildForecast(state.data, state.derived, getFcInputs());
 
-    <!-- TAB 5: SO SÁNH NGÀNH & ĐỊNH GIÁ -->
-    <section id="tab-valuation" class="tab-panel">
-      <div class="panel-header">
-        <div>
-          <h2>So sánh cùng ngành & Hỗ trợ Định giá (DCF, Multiples)</h2>
-          <p class="muted">Đặt doanh nghiệp cạnh trung bình ngành/đối thủ và ước tính giá trị nội tại theo DCF, EV/EBITDA, P/E, P/B.</p>
-        </div>
-      </div>
+        if (typeof Chart !== "undefined") {
+          destroyChart("peer");
+          state.charts.peer = new Chart(document.getElementById("peerChart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: ["Biên gộp (%)", "Biên ròng (%)", "ROA (%)", "ROE (%)", "VQ Tồn kho"],
+              datasets: [
+                { label: "Doanh nghiệp", data: [+(r.grossMargin * 100).toFixed(1), +(r.netMargin * 100).toFixed(1), +(r.roa * 100).toFixed(1), +(r.roe * 100).toFixed(1), +r.inventoryTurnover.toFixed(1)], backgroundColor: "#2563eb", borderRadius: 5 },
+                { label: "Trung bình ngành", data: [+document.getElementById("peerGrossMargin").value, +document.getElementById("peerNetMargin").value, +document.getElementById("peerRoa").value, +document.getElementById("peerRoe").value, +document.getElementById("peerInvTurn").value], backgroundColor: "#f59e0b", borderRadius: 5 }
+              ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
 
-      <div class="two-col-grid">
-        <div class="card">
-          <div class="card-header">
-            <h3>So sánh cùng ngành (Nhập số trung bình ngành)</h3>
-          </div>
-          <div class="form-grid-2">
-            <div class="input-box">
-              <label for="peerGrossMargin">Biên LN gộp ngành (%)</label>
-              <input type="number" step="0.5" id="peerGrossMargin" value="26" oninput="window.updateValuationAndPeer()" />
+        const wacc = +document.getElementById("valWacc").value || 11;
+        const g = +document.getElementById("valTermG").value || 3.5;
+        const shares = +document.getElementById("valShares").value || 100;
+        const mkt = +document.getElementById("valMarketPrice").value || 25;
+        const evEb = +document.getElementById("valEvEbitda").value || 8.5;
+        const pe = +document.getElementById("valPe").value || 12;
+        const pb = +document.getElementById("valPb").value || 1.8;
+
+        const nd = state.derived.netDebt[last];
+        const dcf = F.computeDcf(rows, nd, wacc, g, shares);
+        const pEv = (state.derived.ebitda[last] * evEb - nd) / shares;
+        const pPe = (state.derived.netProfit[last] * pe) / shares;
+        const pPb = (state.data.bs.equity[last] * pb) / shares;
+
+        const up = p => {
+          const df = (p - mkt) / mkt;
+          return `<span class="${df >= 0 ? "num-pos" : "num-neg"}">${df >= 0 ? "+" : ""}${F.fmtPct(df, 1)} vs giá TT</span>`;
+        };
+
+        document.getElementById("valuationSummary").innerHTML = `
+          <div class="val-box"><div class="val-box-label">Định giá DCF</div><div class="val-box-value">${dcf.valid ? F.fmtNum(dcf.pricePerShare, 1) + "k" : "Lỗi"}</div><div class="val-box-note">${dcf.valid ? up(dcf.pricePerShare) : dcf.error}</div></div>
+          <div class="val-box"><div class="val-box-label">EV/EBITDA (${evEb}x)</div><div class="val-box-value">${F.fmtNum(pEv, 1)}k</div><div class="val-box-note">${up(pEv)}</div></div>
+          <div class="val-box"><div class="val-box-label">P/E (${pe}x)</div><div class="val-box-value">${F.fmtNum(pPe, 1)}k</div><div class="val-box-note">${up(pPe)}</div></div>
+          <div class="val-box"><div class="val-box-label">P/B (${pb}x)</div><div class="val-box-value">${F.fmtNum(pPb, 1)}k</div><div class="val-box-note">${up(pPb)}</div></div>
+        `;
+
+        const wSteps = [wacc - 2, wacc - 1, wacc, wacc + 1, wacc + 2];
+        const gSteps = [g - 1, g - 0.5, g, g + 0.5, g + 1];
+        let sHtml = `<thead><tr><th>WACC \\ g</th>${gSteps.map(x => `<th>g = ${F.fmtNum(x, 1)}%</th>`).join("")}</tr></thead><tbody>`;
+        wSteps.forEach(w => {
+          sHtml += `<tr><td><strong>${F.fmtNum(w, 1)}%</strong></td>`;
+          gSteps.forEach(gv => {
+            const res = F.computeDcf(rows, nd, w, gv, shares);
+            const mid = Math.abs(w - wacc) < 1e-6 && Math.abs(gv - g) < 1e-6;
+            sHtml += `<td style="${mid ? "background:#eff6ff;color:#1d4ed8;font-weight:800;" : ""}">${res.valid ? F.fmtNum(res.pricePerShare, 1) : "—"}</td>`;
+          });
+          sHtml += `</tr>`;
+        });
+        document.getElementById("sensitivityTable").innerHTML = sHtml + `</tbody>`;
+      }
+
+      function renderPromptLibrary() {
+        const q = document.getElementById("aiCustomQuestion")?.value || "";
+        document.getElementById("promptLibraryContainer").innerHTML = window.AIPrompts.TEMPLATES.map(t => {
+          const full = window.AIPrompts.getContextualizedPrompt(t.id, state.data, state.derived, state.alerts, q);
+          return `
+            <div class="prompt-card">
+              <h4>${t.title}</h4>
+              <div class="prompt-cols">
+                <div class="prompt-pane">
+                  <div class="prompt-pane-head"><span>📌 Mẫu gốc</span><button class="btn btn-sm" onclick="window.copyPromptText('${t.id}',false,this)">📋 Copy gốc</button></div>
+                  <pre class="prompt-pre" id="prompt-base-${t.id}">${esc(t.basePrompt)}</pre>
+                </div>
+                <div class="prompt-pane">
+                  <div class="prompt-pane-head"><span>⚡ Đã ghép số liệu (${esc(state.data.companyName)})</span><button class="btn btn-primary btn-sm" onclick="window.copyPromptText('${t.id}',true,this)">📋 Copy kèm số liệu</button></div>
+                  <pre class="prompt-pre" id="prompt-ctx-${t.id}">${esc(full)}</pre>
+                </div>
+              </div>
             </div>
-            <div class="input-box">
-              <label for="peerNetMargin">Biên LN ròng ngành (%)</label>
-              <input type="number" step="0.5" id="peerNetMargin" value="9.5" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="peerRoa">ROA ngành (%)</label>
-              <input type="number" step="0.5" id="peerRoa" value="7.5" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="peerRoe">ROE ngành (%)</label>
-              <input type="number" step="0.5" id="peerRoe" value="15" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="peerInvTurn">Vòng quay tồn kho ngành (vòng)</label>
-              <input type="number" step="0.2" id="peerInvTurn" value="5.5" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="peerDE">D/E trung bình ngành (lần)</label>
-              <input type="number" step="0.1" id="peerDE" value="1.0" oninput="window.updateValuationAndPeer()" />
-            </div>
+          `;
+        }).join("");
+      }
+
+      function renderLearning() {
+        document.getElementById("learningModulesGrid").innerHTML = window.LEARNING_MODULES.map(m => `
+          <div class="module-card">
+            <div class="module-tag">${m.tag}</div>
+            <h3>${m.title}</h3>
+            <p class="muted">${m.desc}</p>
+            <ul>${m.bullets.map(b => `<li>${b}</li>`).join("")}</ul>
           </div>
-          <div class="chart-wrap-sm">
-            <canvas id="peerChart"></canvas>
-          </div>
-        </div>
+        `).join("");
+      }
 
-        <div class="card">
-          <div class="card-header">
-            <h3>Định giá DCF & So sánh Bội số</h3>
-          </div>
-          <div class="form-grid-2">
-            <div class="input-box">
-              <label for="valWacc">WACC - Chi phí vốn (%)</label>
-              <input type="number" step="0.5" id="valWacc" value="11" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="valTermG">Tăng trưởng dài hạn g (%)</label>
-              <input type="number" step="0.5" id="valTermG" value="3.5" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="valShares">Số lượng cổ phiếu (triệu CP)</label>
-              <input type="number" step="1" id="valShares" value="100" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="valMarketPrice">Giá thị trường hiện tại (nghìn đ/CP)</label>
-              <input type="number" step="0.5" id="valMarketPrice" value="25" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="valEvEbitda">EV/EBITDA ngành (lần)</label>
-              <input type="number" step="0.5" id="valEvEbitda" value="8.5" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="valPe">P/E ngành (lần)</label>
-              <input type="number" step="0.5" id="valPe" value="12" oninput="window.updateValuationAndPeer()" />
-            </div>
-            <div class="input-box">
-              <label for="valPb">P/B ngành (lần)</label>
-              <input type="number" step="0.1" id="valPb" value="1.8" oninput="window.updateValuationAndPeer()" />
-            </div>
-          </div>
+      // Global bindings
+      window.switchTab = function (id) {
+        document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.getAttribute("data-tab") === id));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === id));
+        const meta = TAB_META[id];
+        if (meta) {
+          document.getElementById("topbarTitle").textContent = meta[0];
+          document.getElementById("topbarSubtitle").textContent = meta[1];
+        }
+      };
+      window.onSelectSample = function (val) {
+        if (val === "custom") { state.sampleKey = "custom"; saveLocal(); return; }
+        if (window.BCTC_SAMPLES[val]) {
+          state.sampleKey = val;
+          state.data = deepClone(window.BCTC_SAMPLES[val]);
+          recomputeAll();
+          showStatus(`Đã nạp: ${state.data.companyName}`);
+        }
+      };
+      window.onCompanyNameChange = function (v) { state.data.companyName = v.trim() || "Doanh nghiệp của tôi"; state.sampleKey = "custom"; recomputeAll(); };
+      window.setStatementType = function (t) {
+        state.statementType = t;
+        ["is", "bs", "cf"].forEach(k => document.getElementById("stmt-" + k).classList.toggle("active", k === t));
+        renderStatementTable();
+      };
+      window.setAnalysisMode = function (m) {
+        state.analysisMode = m;
+        ["abs", "vertical", "horizontal"].forEach(k => document.getElementById("mode-" + k).classList.toggle("active", k === m));
+        renderStatementTable();
+      };
+      window.onCellEdit = function (sec, k, i, v) { state.data[sec][k][i] = isNaN(Number(v)) ? 0 : Number(v); state.sampleKey = "custom"; recomputeAll(); };
+      window.onBudgetEdit = function (k, v) { if (!state.data.budgetLatest) state.data.budgetLatest = {}; state.data.budgetLatest[k] = Number(v) || 0; state.sampleKey = "custom"; recomputeAll(); };
+      window.addNewPeriod = function () {
+        const lbl = prompt("Nhập tên kỳ/năm mới (VD: 2027 hoặc Q2/2026):", "2027");
+        if (!lbl || !lbl.trim()) return;
+        state.data.periods.push(lbl.trim());
+        ["is", "bs", "cf"].forEach(s => Object.keys(state.data[s]).forEach(k => { const a = state.data[s][k]; a.push(a.length ? a[a.length - 1] : 0); }));
+        state.sampleKey = "custom";
+        recomputeAll();
+        showStatus(`Đã thêm kỳ mới: ${lbl.trim()}`);
+      };
+      window.resetToCurrentSample = function () {
+        const k = window.BCTC_SAMPLES[state.sampleKey] ? state.sampleKey : "sample_5y";
+        state.sampleKey = k; state.data = deepClone(window.BCTC_SAMPLES[k]); recomputeAll();
+        showStatus("Đã khôi phục số liệu mẫu.");
+      };
+      window.resetForecastAssumptions = function () {
+        document.getElementById("fcRevGrowth").value = 12;
+        document.getElementById("fcGrossMargin").value = 28;
+        document.getElementById("fcOpexPct").value = 14;
+        document.getElementById("fcDepPct").value = 3.5;
+        document.getElementById("fcCapexPct").value = 4;
+        document.getElementById("fcTaxRate").value = 20;
+        document.getElementById("fcNwcPct").value = 15;
+        updateForecast();
+      };
+      window.renderDashboard = renderDashboard;
+      window.updateForecast = updateForecast;
+      window.updateValuationAndPeer = updateValuationAndPeer;
+      window.renderPromptLibrary = renderPromptLibrary;
+      window.saveAiConfig = function () {
+        try { localStorage.setItem(AI_CFG_KEY, JSON.stringify({ provider: document.getElementById("aiProviderSelect").value, apiKey: document.getElementById("aiApiKeyInput").value })); } catch (e) {}
+      };
+      window.generateOfflineReport = function () {
+        const md = F.generateOfflineReport(state.data, state.derived, state.alerts, document.getElementById("reportTypeSelect").value);
+        document.getElementById("reportDraftArea").value = md;
+        document.getElementById("reportStatus").textContent = "✅ Đã sinh bản nháp báo cáo.";
+      };
+      window.copyReportDraft = async function () {
+        const t = document.getElementById("reportDraftArea").value;
+        if (!t) return showStatus("Hãy bấm 'Tạo bản nháp' trước.", "warn");
+        try { await navigator.clipboard.writeText(t); showStatus("Đã copy báo cáo!"); } catch (e) { showStatus("Hãy bôi đen và nhấn Ctrl+C.", "warn"); }
+      };
+      window.downloadReportMd = function () {
+        const t = document.getElementById("reportDraftArea").value;
+        if (!t) return showStatus("Hãy bấm 'Tạo bản nháp' trước.", "warn");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([t], { type: "text/markdown;charset=utf-8" }));
+        a.download = `Bao_cao_BCTC_${Date.now()}.md`; a.click();
+      };
+      window.copyPromptText = async function (id, ctx, btn) {
+        const el = document.getElementById((ctx ? "prompt-ctx-" : "prompt-base-") + id);
+        if (!el) return;
+        try {
+          await navigator.clipboard.writeText(el.textContent);
+          const old = btn.textContent; btn.textContent = "✅ Đã copy!";
+          setTimeout(() => btn.textContent = old, 1600);
+        } catch (e) { showStatus("Hãy bôi đen và nhấn Ctrl+C.", "warn"); }
+      };
+      window.runDirectAiAnalysis = async function () {
+        const btn = document.getElementById("runAiBtn"), st = document.getElementById("aiCallStatus"), out = document.getElementById("aiResponseBox");
+        btn.disabled = true; st.className = "inline-status"; st.textContent = "⏳ Đang gửi số liệu tới AI...";
+        try {
+          const prompt = window.AIPrompts.getContextualizedPrompt(document.getElementById("aiTaskSelect").value, state.data, state.derived, state.alerts, document.getElementById("aiCustomQuestion").value);
+          const reply = await window.AIPrompts.callAiApi({ provider: document.getElementById("aiProviderSelect").value, apiKey: document.getElementById("aiApiKeyInput").value, prompt });
+          out.textContent = reply; out.classList.remove("hidden"); st.textContent = "✅ Hoàn tất!";
+        } catch (err) {
+          st.className = "inline-status error"; st.textContent = "❌ " + err.message;
+        } finally { btn.disabled = false; }
+      };
+      window.downloadExcelTemplate = function () {
+        try {
+          if (typeof XLSX === "undefined") throw new Error("Cần có mạng để tải thư viện Excel (SheetJS).");
+          const d = state.data, rows = [["Section", "Key", "ChiTieu", ...d.periods]];
+          ["is", "bs", "cf"].forEach(s => STATEMENT_DEFS[s].forEach(def => { if (def.editable) rows.push([s, def.key, def.label, ...d[s][def.key]]); }));
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "BCTC_Data");
+          XLSX.writeFile(wb, "Mau_Nhap_BCTC_AI.xlsx");
+          showStatus("Đã tải file Excel mẫu (Mau_Nhap_BCTC_AI.xlsx).");
+        } catch (e) { showStatus("Lỗi xuất Excel: " + e.message, "error"); }
+      };
+      window.handleExcelUpload = async function (ev) {
+        const file = ev.target.files[0]; if (!file) return;
+        try {
+          if (typeof XLSX === "undefined") throw new Error("Cần có mạng để đọc file Excel.");
+          const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+          const periods = (rows[0] || []).slice(3).filter(x => x !== undefined && String(x).trim() !== "").map(String);
+          if (!periods.length) throw new Error("Hãy dùng đúng cấu trúc file Excel mẫu (cột D trở đi là các kỳ/năm).");
+          const nd = deepClone(state.data);
+          nd.companyName = file.name.replace(/\.(xlsx|xls|csv)$/i, ""); nd.periods = periods;
+          ["is", "bs", "cf"].forEach(s => Object.keys(nd[s]).forEach(k => nd[s][k] = periods.map(() => 0)));
+          for (let r = 1; r < rows.length; r++) {
+            const s = String(rows[r][0] || "").trim().toLowerCase(), k = String(rows[r][1] || "").trim();
+            if (nd[s] && nd[s][k]) nd[s][k] = periods.map((_, i) => Number(rows[r][3 + i]) || 0);
+          }
+          state.data = nd; state.sampleKey = "custom"; recomputeAll();
+          showStatus(`Đã nhập "${file.name}" (${periods.length} kỳ).`);
+        } catch (e) { showStatus("Lỗi nhập Excel: " + e.message, "error"); } finally { ev.target.value = ""; }
+      };
+      window.exportJsonBackup = function () {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(state.data, null, 2)], { type: "application/json" }));
+        a.download = `BCTC_Backup_${Date.now()}.json`; a.click();
+        showStatus("Đã xuất file Backup JSON.");
+      };
+      window.handleJsonImport = async function (ev) {
+        const file = ev.target.files[0]; if (!file) return;
+        try {
+          const p = JSON.parse(await file.text());
+          if (!p.periods || !p.is || !p.bs || !p.cf) throw new Error("File JSON không đúng định dạng BCTC.");
+          state.data = p; state.sampleKey = "custom"; recomputeAll();
+          showStatus(`Đã khôi phục "${file.name}".`);
+        } catch (e) { showStatus("Lỗi đọc JSON: " + e.message, "error"); } finally { ev.target.value = ""; }
+      };
 
-          <div id="valuationSummary" class="val-summary-grid"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h3>Bảng độ nhạy định giá DCF (Giá mục tiêu: nghìn đồng/CP theo WACC &amp; g)</h3>
-        </div>
-        <div class="table-responsive">
-          <table id="sensitivityTable" class="data-table"></table>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 6: BÁO CÁO QUẢN TRỊ & TRỢ LÝ AI -->
-    <section id="tab-ai" class="tab-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Báo cáo Quản trị tự động &amp; Trợ lý AI</h2>
-          <p class="muted">Tự động sinh bản nháp báo cáo offline, copy prompt đã ghép số liệu sang Claude/ChatGPT/Gemini, hoặc gọi API trực tiếp.</p>
-        </div>
-      </div>
-
-      <!-- Khối 1: Sinh báo cáo offline -->
-      <div class="card">
-        <div class="card-header">
-          <h3>📝 Sinh bản nháp Báo cáo Quản trị (Chạy ngay không cần API)</h3>
-          <div class="inline-controls">
-            <select id="reportTypeSelect">
-              <option value="bod">Báo cáo Ban Giám đốc (Điều hành)</option>
-              <option value="monthly">Báo cáo Tài chính Tháng / Quý</option>
-              <option value="agm">Báo cáo Đại hội đồng Cổ đông (ĐHCĐ)</option>
-            </select>
-            <button class="btn btn-primary btn-sm" onclick="window.generateOfflineReport()">✨ Tạo bản nháp</button>
-            <button class="btn btn-outline btn-sm" onclick="window.copyReportDraft()">📋 Copy</button>
-            <button class="btn btn-outline btn-sm" onclick="window.downloadReportMd()">⬇️ Tải .md</button>
-          </div>
-        </div>
-        <div id="reportStatus" class="inline-status"></div>
-        <textarea id="reportDraftArea" rows="12" class="code-textarea" placeholder="Bấm 'Tạo bản nháp' để hệ thống tự tổng hợp báo cáo từ số liệu hiện tại..."></textarea>
-      </div>
-
-      <!-- Khối 2: Kết nối AI API trực tiếp (tùy chọn) -->
-      <div class="card">
-        <div class="card-header">
-          <h3>⚡ Phân tích trực tiếp bằng AI API (Tùy chọn - Lưu key cục bộ trên máy bạn)</h3>
-        </div>
-        <div class="form-grid-3">
-          <div class="input-box">
-            <label for="aiProviderSelect">Nhà cung cấp AI</label>
-            <select id="aiProviderSelect" onchange="window.saveAiConfig()">
-              <option value="gemini">Google Gemini (gemini-2.5-flash)</option>
-              <option value="openai">OpenAI (gpt-4o-mini)</option>
-            </select>
-          </div>
-          <div class="input-box">
-            <label for="aiApiKeyInput">API Key cá nhân (không gửi đi đâu ngoài nhà cung cấp)</label>
-            <input type="password" id="aiApiKeyInput" placeholder="Dán API Key của bạn..." onchange="window.saveAiConfig()" />
-          </div>
-          <div class="input-box">
-            <label for="aiTaskSelect">Chủ đề hỏi AI</label>
-            <select id="aiTaskSelect">
-              <option value="variance">Giải thích biến động &amp; Nguyên nhân gốc rễ</option>
-              <option value="risks">Soát xét rủi ro &amp; Red Flags</option>
-              <option value="bod_report">Viết Báo cáo Ban Giám đốc chuyên sâu</option>
-              <option value="valuation">Đánh giá định giá &amp; So sánh ngành</option>
-              <option value="forecast">Đề xuất kịch bản Dự báo &amp; Dòng tiền</option>
-            </select>
-          </div>
-        </div>
-        <div class="input-box" style="margin-top:10px;">
-          <label for="aiCustomQuestion">Câu hỏi bổ sung (tùy chọn)</label>
-          <input type="text" id="aiCustomQuestion" placeholder="Ví dụ: Đề xuất 3 hành động cụ thể để cải thiện dòng tiền kinh doanh trong quý tới..." />
-        </div>
-        <div class="action-row">
-          <button class="btn btn-primary" id="runAiBtn" onclick="window.runDirectAiAnalysis()">🚀 Chạy phân tích AI ngay</button>
-          <span id="aiCallStatus" class="inline-status"></span>
-        </div>
-        <div id="aiResponseBox" class="ai-output hidden"></div>
-      </div>
-
-      <!-- Khối 3: Thư viện Prompt gốc + Tự động ghép số liệu -->
-      <div class="card">
-        <div class="card-header">
-          <h3>📋 Thư viện Prompt AI (Luôn có sẵn Mẫu gốc + Bản đã ghép số liệu doanh nghiệp)</h3>
-          <span class="muted">Dùng miễn phí bằng cách Copy dán sang Claude / ChatGPT / Gemini</span>
-        </div>
-        <div id="promptLibraryContainer" class="prompt-list"></div>
-      </div>
-    </section>
-
-    <!-- TAB 7: 5 MODULE NỀN TẢNG -->
-    <section id="tab-learning" class="tab-panel">
-      <div class="panel-header">
-        <div>
-          <h2>Lộ trình 5 Module Nền tảng Đọc hiểu BCTC &amp; Kiểm chứng AI</h2>
-          <p class="muted">Tra cứu nhanh để biết con số nào hợp lý, chỉ số nào báo hiệu vấn đề và nên hỏi AI tiếp điều gì.</p>
-        </div>
-      </div>
-      <div id="learningModulesGrid" class="modules-grid"></div>
-    </section>
-  </main>
-
-  <footer class="app-footer">
-    <span>AI Phân Tích BCTC Cá Nhân v1.0 · Dữ liệu lưu cục bộ trên trình duyệt (localStorage) · Không cần cài đặt server</span>
-  </footer>
-
-  <script src="js/data_sample.js?v=1.0"></script>
-  <script src="js/finance_engine.js?v=1.0"></script>
-  <script src="js/ai_prompts.js?v=1.0"></script>
-  <script src="js/app.js?v=1.0"></script>
+      document.addEventListener("DOMContentLoaded", function () {
+        loadInitial();
+        loadAiCfg();
+        renderLearning();
+        recomputeAll();
+      });
+    })();
+  </script>
 </body>
 </html>
