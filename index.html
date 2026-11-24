@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v6.7</title>
+  <title>AI Phân Tích BCTC Cá Nhân v6.8</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -811,7 +811,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.7</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.8</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -822,6 +822,7 @@
         <option value="sample_q1_2026">Mẫu 2: Case Q1/2026 (Lãi TC, OCF âm)</option>
         <option value="sample_masan">🏢 Tập đoàn Masan (2022–2025 · BCTC KPMG)</option>
         <option value="sample_vinamilk">🥛 CTCP Sữa Việt Nam - Vinamilk (2021–2025)</option>
+        <option value="sample_mcm">🐄 CTCP Giống bò sữa Mộc Châu - MCM (2020–2024)</option>
         <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
       </select>
       <div class="sidebar-section-label" style="margin-top:6px;">Chế độ chạy Auto (Filter)</div>
@@ -1673,6 +1674,41 @@
   <script>
     // ================= 1. DỮ LIỆU MẪU =================
     window.BCTC_SAMPLES = {
+      sample_mcm: {
+        companyName: "Công ty Cổ phần Giống bò sữa Mộc Châu (MCM)",
+        unit: "tỷ đồng",
+        periods: ["2020", "2021", "2022", "2023", "2024"],
+        budgetLatest: { revenue: 3100, grossProfit: 950, ebitda: 350, ebt: 320, netProfit: 280, ocf: 250 },
+        is: {
+          revenue:         [2822.9, 2925.7, 3133.1, 3135.4, 2917.0],
+          cogs:            [1934.7, 2027.2, 2115.3, 2126.8, 2068.4],
+          sga:             [626.1,  630.9,  728.3,  746.8,  694.2],
+          depreciation:    [51.8,   49.9,   54.5,   62.0,   67.0],
+          finIncome:       [41.1,   95.4,   103.2,  162.3,  101.3],
+          interestExpense: [0.1,    0.5,    1.0,    0.9,    1.9],
+          otherProfit:     [-5.6,   -8.8,   -10.9,  0.3,    -1.7],
+          taxExpense:      [16.8,   34.6,   34.1,   49.2,   32.1]
+        },
+        bs: {
+          cash:            [632.6,  1749.1, 1597.0, 1497.3, 1639.3],
+          receivables:     [145.4,  272.7,  308.2,  349.1,  287.0],
+          inventory:       [204.5,  192.8,  194.2,  185.6,  172.4],
+          otherCurrent:    [53.4,   4.1,    23.8,   45.7,   16.2],
+          fixedAssets:     [151.3,  141.8,  226.8,  392.6,  366.6],
+          longTermInvest:  [0.1,    0.1,    0.1,    0.1,    0.1],
+          otherNonCurrent: [35.4,   126.4,  105.1,  135.7,  205.1],
+          shortTermDebt:   [0.0,    77.2,   0.0,    0.0,    99.0],
+          payables:        [250.6,  212.8,  238.0,  274.5,  278.6],
+          longTermDebt:    [60.1,   23.6,   7.0,    4.4,    3.9],
+          equity:          [911.9,  2173.4, 2210.3, 2327.3, 2305.2]
+        },
+        cf: {
+          ocf:             [298.7,  230.3,  268.5,  287.5,  196.1],
+          icf:             [-184.0, -1176.9,303.5,  -324.2, -94.0],
+          fcfFin:          [-167.0, 1017.4, -352.1, -220.1, -121.0],
+          capex:           [21.1,   151.3,  139.4,  246.4,  93.5]
+        }
+      },
       sample_vinamilk: {
         companyName: "Công ty Cổ phần Sữa Việt Nam (Vinamilk)",
         unit: "tỷ đồng",
@@ -3737,7 +3773,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           if (isLargeReport) {
             fullText = (bctcText ? bctcText + "\n\n=== THÔNG TIN CHUNG ===\n" + headerText.slice(0, 8000) : headerText);
           }
-          const isScanned = rawCharCount < 150;
+          const isScanned = rawCharCount < 900;
           const pageImages = [];
           if (isScanned) {
             // Chuyển các trang chính (Bìa + CĐKT + KQKD + LCTT: trang 1..14) sang ảnh JPEG để Vision AI đọc trực tiếp
@@ -4292,7 +4328,7 @@ Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
             } else if (hasScannedPdf) {
               stEl.className = "master-upload-status error";
               stEl.textContent = "⚠️ PDF dạng ảnh scan (không có chữ) — cần dán Gemini API Key để đọc tự động!";
-              showStatus("⚠️ Các file PDF bạn tải lên là PDF DẠNG ẢNH SCAN (không có lớp chữ nên trình duyệt không đọc offline được). Hãy dán Gemini API Key miễn phí ở tab 'Báo cáo & Trợ lý AI' rồi tải lại file để Vision AI tự đọc 100%!", "warn");
+              showStatus("⚠️ Các file PDF bạn tải lên là PDF DẠNG ẢNH SCAN (không có lớp chữ nên trình duyệt không đọc offline được). Hãy dán Gemini API Key miễn phí ở mục '⚙️ Cấu hình API Cá nhân' (dưới cùng cột trái) rồi tải lại file để Vision AI tự đọc 100%!", "warn");
               return;
             }
           }
