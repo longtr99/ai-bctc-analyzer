@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v4.0</title>
+  <title>AI Phân Tích BCTC Cá Nhân v5.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -717,6 +717,56 @@
       padding: 12px 14px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 10px; margin-bottom: 10px;
     }
     .smart-q-text { font-size: 13px; font-weight: 600; color: #1e3a8a; flex: 1; min-width: 220px; }
+
+    /* 5 Auto-Running Visual Prompt Templates (v5.0) */
+    .auto-tpl-filter {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+    }
+    .auto-tpl-btn {
+      padding: 7px 12px; border-radius: 99px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text-soft); font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: 0.15s;
+    }
+    .auto-tpl-btn:hover { border-color: #93c5fd; color: var(--primary); }
+    .auto-tpl-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .auto-tpl-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 18px 20px; margin-bottom: 18px; box-shadow: var(--shadow-sm);
+      border-left: 5px solid var(--primary);
+    }
+    .auto-tpl-card.hidden-tpl { display: none; }
+    .auto-tpl-head {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+      gap: 10px; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    .auto-tpl-title { font-size: 15px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .auto-tpl-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .mini-stat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+      gap: 10px; margin-bottom: 14px;
+    }
+    .mini-stat {
+      background: var(--surface-soft); border: 1px solid var(--border); border-radius: 10px;
+      padding: 11px 13px;
+    }
+    .mini-stat-lbl { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .mini-stat-val { font-size: 18px; font-weight: 800; color: var(--text); margin: 3px 0 2px; }
+    .mini-stat-sub { font-size: 11.5px; font-weight: 600; color: var(--text-soft); }
+
+    .change-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-top: 12px; }
+    .change-item {
+      background: var(--surface-soft); border: 1px solid var(--border); border-radius: 10px;
+      padding: 11px 13px; border-left: 4px solid var(--primary);
+    }
+    .change-item.up { border-left-color: var(--good); background: #f0fdf4; }
+    .change-item.down { border-left-color: var(--danger); background: #fef2f2; }
+    .change-item-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 12.5px; margin-bottom: 3px; }
+    .prompt-collapse {
+      margin-top: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;
+      padding: 10px 12px; font-size: 12px; color: var(--text-soft); white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
@@ -726,7 +776,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v4.0</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v5.0</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -1159,12 +1209,118 @@
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header">
-              <h3>📌 5 Prompt Template Tư Vấn Tài Chính (Mẫu gốc Copy-Paste ngay)</h3>
-              <span class="muted">Luôn sẵn sàng bản mẫu sạch + nút Chèn vào khung chat</span>
+          <div class="card" style="background:transparent;border:none;box-shadow:none;padding:0;">
+            <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,#eff6ff 0%,#ffffff 100%);border-color:#bfdbfe;">
+              <div class="card-header" style="margin-bottom:10px;">
+                <div>
+                  <h3 style="color:#1e3a8a;">⚡ 5 Phân Tích Tư Vấn Tài Chính Tự Động &amp; Trực Quan (Chạy live từ BCTC)</h3>
+                  <span class="muted" id="autoTplSubtitle">Tự động tính toán, vẽ biểu đồ và đưa khuyến nghị chi tiết theo đúng số liệu doanh nghiệp đang mở</span>
+                </div>
+                <span class="badge badge-good">Auto Visual v5.0</span>
+              </div>
+              <div class="auto-tpl-filter">
+                <button class="auto-tpl-btn active" id="tplFilter-all" onclick="window.filterAutoTemplates('all')">👁️ Xem tất cả (5)</button>
+                <button class="auto-tpl-btn" id="tplFilter-1" onclick="window.filterAutoTemplates('1')">1. Tóm tắt BCTC</button>
+                <button class="auto-tpl-btn" id="tplFilter-2" onclick="window.filterAutoTemplates('2')">2. Dòng tiền 3 cột</button>
+                <button class="auto-tpl-btn" id="tplFilter-3" onclick="window.filterAutoTemplates('3')">3. Đủ trả lương/thuế?</button>
+                <button class="auto-tpl-btn" id="tplFilter-4" onclick="window.filterAutoTemplates('4')">4. So sánh &amp; Top 5</button>
+                <button class="auto-tpl-btn" id="tplFilter-5" onclick="window.filterAutoTemplates('5')">5. Dự báo &amp; Khuyến nghị</button>
+              </div>
             </div>
-            <div id="docTemplatesGrid" class="prompt-list"></div>
+
+            <!-- TEMPLATE 1: TÓM TẮT BCTC -->
+            <div class="auto-tpl-card" id="autoTplCard-1">
+              <div class="auto-tpl-head">
+                <div class="auto-tpl-title"><span class="badge">Template 1</span> Tóm Tắt BCTC &amp; 3 Rủi Ro Lớn Nhất</div>
+                <div class="auto-tpl-actions">
+                  <button class="btn btn-sm" onclick="window.toggleTplPrompt(1)">👁️ Xem mẫu gốc</button>
+                  <button class="btn btn-sm" onclick="window.copyDocTpl(0, this)">📋 Copy mẫu</button>
+                  <button class="btn btn-primary btn-sm" onclick="window.applyDocTemplate(0)">🚀 Hỏi AI sâu hơn</button>
+                </div>
+              </div>
+              <div id="autoTpl1Stats" class="mini-stat-grid"></div>
+              <div id="autoTpl1Risks" class="alerts-list"></div>
+              <div id="tplRawPrompt-1" class="prompt-collapse hidden"></div>
+            </div>
+
+            <!-- TEMPLATE 2: TRÍCH XUẤT DỮ LIỆU DÒNG TIỀN -->
+            <div class="auto-tpl-card" id="autoTplCard-2">
+              <div class="auto-tpl-head">
+                <div class="auto-tpl-title"><span class="badge">Template 2</span> Trích Xuất Dữ Liệu Dòng Tiền (Bảng 3 Cột &amp; Biểu Đồ)</div>
+                <div class="auto-tpl-actions">
+                  <button class="btn btn-sm" onclick="window.toggleTplPrompt(2)">👁️ Xem mẫu gốc</button>
+                  <button class="btn btn-sm" onclick="window.copyDocTpl(1, this)">📋 Copy mẫu</button>
+                  <button class="btn btn-primary btn-sm" onclick="window.applyDocTemplate(1)">🚀 Hỏi AI sâu hơn</button>
+                </div>
+              </div>
+              <div class="two-col-grid">
+                <div class="table-responsive">
+                  <table id="autoTpl2Table" class="data-table"></table>
+                </div>
+                <div class="chart-wrap-sm" style="margin-top:0;height:240px;">
+                  <canvas id="autoTpl2Chart"></canvas>
+                </div>
+              </div>
+              <div id="autoTpl2Verdict" class="alerts-list" style="margin-top:12px;"></div>
+              <div id="tplRawPrompt-2" class="prompt-collapse hidden"></div>
+            </div>
+
+            <!-- TEMPLATE 3: PHÂN TÍCH DÒNG TIỀN TRẢ LƯƠNG, THUẾ, LÃI VAY -->
+            <div class="auto-tpl-card" id="autoTplCard-3">
+              <div class="auto-tpl-head">
+                <div class="auto-tpl-title"><span class="badge">Template 3</span> Phân Tích Dòng Tiền: Có Đủ Trả Lương, Thuế &amp; Lãi Vay Không?</div>
+                <div class="auto-tpl-actions">
+                  <button class="btn btn-sm" onclick="window.toggleTplPrompt(3)">👁️ Xem mẫu gốc</button>
+                  <button class="btn btn-sm" onclick="window.copyDocTpl(2, this)">📋 Copy mẫu</button>
+                  <button class="btn btn-primary btn-sm" onclick="window.applyDocTemplate(2)">🚀 Hỏi AI sâu hơn</button>
+                </div>
+              </div>
+              <div id="autoTpl3Stats" class="mini-stat-grid"></div>
+              <div id="autoTpl3Meters"></div>
+              <div id="autoTpl3Verdict" class="alerts-list"></div>
+              <div id="tplRawPrompt-3" class="prompt-collapse hidden"></div>
+            </div>
+
+            <!-- TEMPLATE 4: SO SÁNH NHIỀU BÁO CÁO & TOP 5 THAY ĐỔI -->
+            <div class="auto-tpl-card" id="autoTplCard-4">
+              <div class="auto-tpl-head">
+                <div class="auto-tpl-title"><span class="badge">Template 4</span> So Sánh Nhiều Kỳ &amp; Top 5 Biến Động Lớn Nhất</div>
+                <div class="auto-tpl-actions">
+                  <button class="btn btn-sm" onclick="window.toggleTplPrompt(4)">👁️ Xem mẫu gốc</button>
+                  <button class="btn btn-sm" onclick="window.copyDocTpl(3, this)">📋 Copy mẫu</button>
+                  <button class="btn btn-primary btn-sm" onclick="window.applyDocTemplate(3)">🚀 Hỏi AI sâu hơn</button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table id="autoTpl4Table" class="data-table"></table>
+              </div>
+              <h4 style="font-size:13.5px;margin:14px 0 6px;color:var(--text);">🔥 Top 5 Khoản mục biến động mạnh nhất (Kỳ gần nhất vs Kỳ trước)</h4>
+              <div id="autoTpl4TopChanges" class="change-list"></div>
+              <div id="tplRawPrompt-4" class="prompt-collapse hidden"></div>
+            </div>
+
+            <!-- TEMPLATE 5: DỰ BÁO Q2-Q4 & KHUYẾN NGHỊ -->
+            <div class="auto-tpl-card" id="autoTplCard-5">
+              <div class="auto-tpl-head">
+                <div class="auto-tpl-title"><span class="badge">Template 5</span> Dự Báo 3 Kịch Bản (Q2–Q4 / 3 Kỳ Tới) &amp; Ưu Tiên Cải Thiện</div>
+                <div class="auto-tpl-actions">
+                  <button class="btn btn-sm" onclick="window.toggleTplPrompt(5)">👁️ Xem mẫu gốc</button>
+                  <button class="btn btn-sm" onclick="window.copyDocTpl(4, this)">📋 Copy mẫu</button>
+                  <button class="btn btn-primary btn-sm" onclick="window.applyDocTemplate(4)">🚀 Hỏi AI sâu hơn</button>
+                </div>
+              </div>
+              <div class="two-col-grid">
+                <div class="chart-wrap-sm" style="margin-top:0;height:250px;">
+                  <canvas id="autoTpl5Chart"></canvas>
+                </div>
+                <div class="table-responsive">
+                  <table id="autoTpl5Table" class="data-table"></table>
+                </div>
+              </div>
+              <h4 style="font-size:13.5px;margin:14px 0 8px;color:var(--text);">🎯 3 Ưu tiên cải thiện quan trọng nhất (Tự động định lượng tác động)</h4>
+              <div id="autoTpl5Recs" class="alerts-list"></div>
+              <div id="tplRawPrompt-5" class="prompt-collapse hidden"></div>
+            </div>
           </div>
         </section>
 
@@ -1921,7 +2077,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         statementType: "is",
         analysisMode: "abs",
         activeLearningMod: 1,
-        charts: { trend: null, waterfall: null, variance: null, forecast: null, peer: null, mod1: null, mod2Funnel: null, mod2Cash: null, mod3Radar: null }
+        charts: { trend: null, waterfall: null, variance: null, forecast: null, peer: null, mod1: null, mod2Funnel: null, mod2Cash: null, mod3Radar: null, tpl2Cash: null, tpl5Fc: null }
       };
 
       const deepClone = o => JSON.parse(JSON.stringify(o));
@@ -1990,6 +2146,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         updateValuationAndPeer();
         renderPromptLibrary();
         renderLearning();
+        renderDocTemplates();
       }
 
       function renderDashboard() {
@@ -2667,7 +2824,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         document.getElementById("fcNwcPct").value = 15;
         updateForecast();
       };
-      window.renderDashboard = function () { renderDashboard(); renderLearning(); };
+      window.renderDashboard = function () { renderDashboard(); renderLearning(); renderDocTemplates(); };
       window.updateForecast = updateForecast;
       window.updateValuationAndPeer = updateValuationAndPeer;
       window.renderPromptLibrary = renderPromptLibrary;
@@ -2792,21 +2949,250 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
       };
 
       function renderDocTemplates() {
-        const el = document.getElementById("docTemplatesGrid");
-        if (!el) return;
-        el.innerHTML = DOC_TEMPLATES.slice(0, 5).map((t, idx) => `
-          <div class="prompt-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
-              <h4 style="margin:0;">${t.title}</h4>
-              <div style="display:flex;gap:6px;">
-                <button class="btn btn-sm" onclick="window.copyDocTpl(${idx}, this)">📋 Copy mẫu</button>
-                <button class="btn btn-primary btn-sm" onclick="window.applyDocTemplate(${idx})">↘️ Đưa vào khung chat</button>
-              </div>
-            </div>
-            <pre class="prompt-pre">${esc(t.text)}</pre>
-          </div>
+        if (!state.data || !state.derived) return;
+        const d = state.data, drv = state.derived;
+        const n = d.periods.length;
+        const idx = Number(document.getElementById("dashboardPeriodSelect")?.value || (n - 1));
+        const prev = idx - 1;
+        const pLabel = d.periods[idx];
+        const r = drv.ratios[idx];
+
+        const subEl = document.getElementById("autoTplSubtitle");
+        if (subEl) subEl.textContent = `Đang chạy tự động cho: ${d.companyName} · Kỳ ${pLabel} (ĐVT: ${d.unit})`;
+
+        // Fill raw prompts in collapsible boxes
+        for (let i = 0; i < 5; i++) {
+          const rawEl = document.getElementById("tplRawPrompt-" + (i + 1));
+          if (rawEl) rawEl.textContent = "📌 Prompt mẫu gốc:\n" + DOC_TEMPLATES[i].text;
+        }
+
+        // ===== TEMPLATE 1: TÓM TẮT BCTC & 3 RỦI RO LỚN NHẤT =====
+        const rev = d.is.revenue[idx], np = drv.netProfit[idx], ta = drv.totalAssets[idx], tl = drv.totalLiabilities[idx], eq = d.bs.equity[idx], ocf = d.cf.ocf[idx];
+        const revYoy = F.yoyPct(d.is.revenue, idx);
+        const npYoy = F.yoyPct(drv.netProfit, idx);
+
+        document.getElementById("autoTpl1Stats").innerHTML = `
+          <div class="mini-stat"><div class="mini-stat-lbl">1. Doanh thu thuần</div><div class="mini-stat-val">${F.fmtNum(rev)} tỷ</div><div class="mini-stat-sub">${revYoy === null ? "Kỳ cơ sở" : (revYoy >= 0 ? "▲ +" : "▼ ") + F.fmtPct(Math.abs(revYoy)) + " YoY"}</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">2. Lợi nhuận ròng</div><div class="mini-stat-val" style="color:${np >= 0 ? "#059669" : "#dc2626"}">${F.fmtNum(np)} tỷ</div><div class="mini-stat-sub">Biên ròng: ${F.fmtPct(r.netMargin)} ${npYoy !== null ? "· " + (npYoy >= 0 ? "+" : "") + F.fmtPct(npYoy) : ""}</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">3. Tổng tài sản</div><div class="mini-stat-val">${F.fmtNum(ta)} tỷ</div><div class="mini-stat-sub">TSNH: ${F.fmtNum(drv.currentAssets[idx])} tỷ</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">4. Nợ phải trả</div><div class="mini-stat-val">${F.fmtNum(tl)} tỷ</div><div class="mini-stat-sub">Chiếm ${F.fmtPct(r.debtToAssets)} Tổng TS</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">5. Vốn chủ sở hữu</div><div class="mini-stat-val">${F.fmtNum(eq)} tỷ</div><div class="mini-stat-sub">D/E = ${F.fmtNum(r.debtToEquity, 2)}x · ROE = ${F.fmtPct(r.roe)}</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">6. Dòng tiền HĐ (OCF)</div><div class="mini-stat-val" style="color:${ocf >= 0 ? "#059669" : "#dc2626"}">${ocf >= 0 ? "+" : ""}${F.fmtNum(ocf)} tỷ</div><div class="mini-stat-sub">${ocf >= 0 ? "Tiền kinh doanh dương" : "Cảnh báo dòng tiền âm"}</div></div>
+        `;
+        document.getElementById("autoTpl1Risks").innerHTML = state.alerts.slice(0, 3).map((a, i) => `
+          <div class="alert-item ${a.level}"><div class="alert-title">⚠️ Điểm chú ý #${i + 1}: ${a.title}</div><div class="alert-desc">${a.desc}</div></div>
         `).join("");
+
+        // ===== TEMPLATE 2: TRÍCH XUẤT DỮ LIỆU DÒNG TIỀN (BẢNG 3 CỘT + CHART) =====
+        let t2Html = `<thead><tr><th>Kỳ</th><th>HĐ Kinh doanh (OCF)</th><th>HĐ Đầu tư (ICF)</th><th>HĐ Tài chính (CFF)</th><th>Tiền thuần kỳ</th></tr></thead><tbody>`;
+        d.periods.forEach((p, i) => {
+          const o = d.cf.ocf[i], ic = d.cf.icf[i], fi = d.cf.fcfFin[i], net = o + ic + fi;
+          t2Html += `<tr class="${i === idx ? "row-highlight" : ""}">
+            <td>${p}</td>
+            <td class="${o >= 0 ? "num-pos" : "num-neg"}">${o >= 0 ? "+" : ""}${F.fmtNum(o)}</td>
+            <td class="${ic >= 0 ? "num-pos" : "num-neg"}">${ic >= 0 ? "+" : ""}${F.fmtNum(ic)}</td>
+            <td class="${fi >= 0 ? "num-pos" : "num-neg"}">${fi >= 0 ? "+" : ""}${F.fmtNum(fi)}</td>
+            <td class="${net >= 0 ? "num-pos" : "num-neg"}">${net >= 0 ? "+" : ""}${F.fmtNum(net)}</td>
+          </tr>`;
+        });
+        document.getElementById("autoTpl2Table").innerHTML = t2Html + `</tbody>`;
+
+        if (typeof Chart !== "undefined") {
+          destroyChart("tpl2Cash");
+          state.charts.tpl2Cash = new Chart(document.getElementById("autoTpl2Chart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: d.periods,
+              datasets: [
+                { label: "HĐ Kinh doanh (OCF)", data: d.cf.ocf, backgroundColor: "#059669", borderRadius: 4 },
+                { label: "HĐ Đầu tư (ICF)", data: d.cf.icf, backgroundColor: "#2563eb", borderRadius: 4 },
+                { label: "HĐ Tài chính (CFF)", data: d.cf.fcfFin, backgroundColor: "#f59e0b", borderRadius: 4 }
+              ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+
+        const oCur = d.cf.ocf[idx], iCur = d.cf.icf[idx], fCur = d.cf.fcfFin[idx];
+        let cfPattern = "";
+        if (oCur >= 0 && iCur < 0 && fCur <= 0) cfPattern = "🟢 Mô hình dòng tiền LÝ TƯỞNG (Trưởng thành): Dòng tiền kinh doanh dương mạnh, đủ tự tài trợ đầu tư mở rộng và trả bớt nợ/cổ tức.";
+        else if (oCur >= 0 && iCur < 0 && fCur > 0) cfPattern = "🔵 Mô hình TĂNG TRƯỞNG: Dòng tiền kinh doanh dương và doanh nghiệp huy động thêm vốn/vay để đầu tư mở rộng.";
+        else if (oCur < 0 && iCur > 0) cfPattern = "🟠 Cảnh báo TÁI CƠ CẤU / HỤT TIỀN KD: Dòng tiền kinh doanh âm (" + F.fmtNum(oCur) + " tỷ), doanh nghiệp đang có tiền vào chủ yếu từ hoạt động đầu tư (thu hồi vốn/bán tài sản/cổ tức công ty con: +" + F.fmtNum(iCur) + " tỷ).";
+        else cfPattern = "🔴 Cảnh báo ÁP LỰC DÒNG TIỀN: Dòng tiền kinh doanh đang âm hoặc yếu, cần theo dõi sát khả năng tạo tiền từ hoạt động cốt lõi.";
+        document.getElementById("autoTpl2Verdict").innerHTML = `<div class="alert-item ${oCur >= 0 ? "good" : "warn"}"><div class="alert-title">Đọc vị mô hình Dòng tiền (${pLabel})</div><div class="alert-desc">${cfPattern}</div></div>`;
+
+        // ===== TEMPLATE 3: PHÂN TÍCH DÒNG TIỀN (ĐỦ TRẢ LƯƠNG, THUẾ, LÃI VAY?) =====
+        const cashOnHand = d.bs.cash[idx] || 0;
+        const intExp = d.is.interestExpense[idx] || 0;
+        const taxExp = Math.max(0, d.is.taxExpense[idx] || 0);
+        const estPayrollOpex = (d.is.sga[idx] || 0) * 0.45; // Ước tính quỹ lương & định phí vận hành thiết yếu ~45% BH&QLDN
+        const totalObligations = intExp + taxExp + estPayrollOpex;
+        const ocfGap = ocf - totalObligations;
+        const totalAvailable = cashOnHand + Math.max(0, ocf);
+        const monthlyBurn = totalObligations > 0 ? totalObligations / 12 : 1;
+        const runwayMonths = cashOnHand / monthlyBurn;
+        const covPct = totalObligations > 0 ? Math.min(100, Math.max(0, (Math.max(0, ocf) / totalObligations) * 100)) : 100;
+
+        document.getElementById("autoTpl3Stats").innerHTML = `
+          <div class="mini-stat"><div class="mini-stat-lbl">Dòng tiền KD (OCF)</div><div class="mini-stat-val" style="color:${ocf >= 0 ? "#059669" : "#dc2626"}">${ocf >= 0 ? "+" : ""}${F.fmtNum(ocf)} tỷ</div><div class="mini-stat-sub">Tiền mặt hiện có: ${F.fmtNum(cashOnHand)} tỷ</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">Nghĩa vụ Thuế + Lãi vay</div><div class="mini-stat-val">${F.fmtNum(intExp + taxExp)} tỷ</div><div class="mini-stat-sub">Lãi vay: ${F.fmtNum(intExp)} · Thuế: ${F.fmtNum(taxExp)}</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">Quỹ lương &amp; ĐP ước tính</div><div class="mini-stat-val">${F.fmtNum(estPayrollOpex)} tỷ</div><div class="mini-stat-sub">Ước tính 45% CP BH&amp;QLDN</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">Đệm tiền mặt (Runway)</div><div class="mini-stat-val">${F.fmtNum(runwayMonths, 1)} tháng</div><div class="mini-stat-sub">${runwayMonths >= 6 ? "Dự phòng an toàn" : "Nên giữ ≥ 6 tháng"}</div></div>
+        `;
+        document.getElementById("autoTpl3Meters").innerHTML = `
+          <div class="meter-card">
+            <div class="meter-head"><span>Tỷ lệ Dòng tiền kinh doanh (OCF) tự trang trải Lương + Thuế + Lãi vay (${F.fmtNum(totalObligations)} tỷ)</span><span>${F.fmtNum(covPct, 0)}%</span></div>
+            <div class="meter-track"><div class="meter-fill" style="width:${covPct}%;background:${ocfGap >= 0 ? "#059669" : totalAvailable >= totalObligations ? "#d97706" : "#dc2626"};"></div></div>
+            <div class="meter-note">${ocfGap >= 0 ? `✅ OCF tự trang trải đủ và còn DƯ <strong>+${F.fmtNum(ocfGap)} tỷ</strong>.` : `⚠️ Riêng OCF đang THIẾU <strong>${F.fmtNum(Math.abs(ocfGap))} tỷ</strong> so với tổng nghĩa vụ — phải dùng thêm tiền mặt dự trữ (${F.fmtNum(cashOnHand)} tỷ) hoặc nguồn đầu tư/tài chính.`}</div>
+          </div>
+        `;
+        document.getElementById("autoTpl3Verdict").innerHTML = `
+          <div class="alert-item ${ocfGap >= 0 ? "good" : totalAvailable >= totalObligations ? "warn" : "danger"}">
+            <div class="alert-title">${ocfGap >= 0 ? "✅ ĐỦ CHI TRẢ BẰNG DÒNG TIỀN KINH DOANH" : totalAvailable >= totalObligations ? "⚠️ ĐỦ CHI TRẢ NHỜ TIỀN MẶT DỰ TRỮ, NHƯNG OCF ĐANG HỤT" : "🚨 CẢNH BÁO THIẾU HỤT THANH KHOẢN"}</div>
+            <div class="alert-desc">${ocfGap >= 0 ? "Hoạt động kinh doanh tạo đủ tiền trả lương, thuế và lãi vay mà không cần ăn vào tiền dự trữ." : `Cần thu hồi nhanh công nợ phải thu (${F.fmtNum(d.bs.receivables[idx])} tỷ) và chuẩn bị hạn mức tín dụng dự phòng tối thiểu ${F.fmtNum(Math.abs(ocfGap) * 0.5)}–${F.fmtNum(Math.abs(ocfGap))} tỷ để tránh căng thẳng dòng tiền.`}</div>
+          </div>
+        `;
+
+        // ===== TEMPLATE 4: SO SÁNH NHIỀU KỲ & TOP 5 THAY ĐỔI LỚN NHẤT =====
+        const cmpRows = [
+          { lbl: "Doanh thu thuần (tỷ)", arr: d.is.revenue, fmt: v => F.fmtNum(v, 1), isPp: false },
+          { lbl: "Lợi nhuận gộp (tỷ)", arr: drv.grossProfit, fmt: v => F.fmtNum(v, 1), isPp: false },
+          { lbl: "EBITDA (tỷ)", arr: drv.ebitda, fmt: v => F.fmtNum(v, 1), isPp: false },
+          { lbl: "Lợi nhuận sau thuế (tỷ)", arr: drv.netProfit, fmt: v => F.fmtNum(v, 1), isPp: false },
+          { lbl: "Dòng tiền kinh doanh OCF (tỷ)", arr: d.cf.ocf, fmt: v => F.fmtNum(v, 1), isPp: false },
+          { lbl: "ROA (%)", arr: drv.ratios.map(x => x.roa), fmt: v => F.fmtPct(v, 1), isPp: true },
+          { lbl: "ROE (%)", arr: drv.ratios.map(x => x.roe), fmt: v => F.fmtPct(v, 1), isPp: true }
+        ];
+        let t4Html = `<thead><tr><th>Chỉ số so sánh</th>${d.periods.map(p => `<th>${p}</th>`).join("")}<th>Thay đổi (${prev >= 0 ? d.periods[idx] + " vs " + d.periods[prev] : "YoY"})</th></tr></thead><tbody>`;
+        cmpRows.forEach(row => {
+          let chgCell = `<td class="muted">—</td>`;
+          if (prev >= 0) {
+            if (row.isPp) {
+              const diffPp = (row.arr[idx] - row.arr[prev]) * 100;
+              chgCell = `<td class="${diffPp >= 0 ? "num-pos" : "num-neg"}">${diffPp >= 0 ? "+" : ""}${F.fmtNum(diffPp, 1)}pp</td>`;
+            } else {
+              const pct = F.yoyPct(row.arr, idx);
+              if (pct !== null) chgCell = `<td class="${pct >= 0 ? "num-pos" : "num-neg"}">${pct >= 0 ? "+" : ""}${F.fmtPct(pct, 1)}</td>`;
+            }
+          }
+          t4Html += `<tr><td><strong>${row.lbl}</strong></td>${row.arr.map(v => `<td>${row.fmt(v)}</td>`).join("")}${chgCell}</tr>`;
+        });
+        document.getElementById("autoTpl4Table").innerHTML = t4Html + `</tbody>`;
+
+        // Top 5 biggest changes
+        const topEl = document.getElementById("autoTpl4TopChanges");
+        if (prev >= 0) {
+          const tracked = [
+            { name: "Doanh thu thuần", arr: d.is.revenue, hint: "Phản ánh nhu cầu thị trường & sản lượng bán." },
+            { name: "Thu nhập tài chính", arr: d.is.finIncome, hint: "Thường đến từ cổ tức, lãi tiền gửi hoặc thoái vốn." },
+            { name: "Chi phí lãi vay", arr: d.is.interestExpense, hint: "Biến động theo dư nợ vay và mặt bằng lãi suất." },
+            { name: "Lợi nhuận sau thuế", arr: drv.netProfit, hint: "Kết quả tổng hợp từ biên gộp, định phí và thu nhập TC." },
+            { name: "Phải thu ngắn hạn", arr: d.bs.receivables, hint: "Tăng mạnh cho thấy nới lỏng bán chịu hoặc chậm thu tiền." },
+            { name: "Hàng tồn kho", arr: d.bs.inventory, hint: "Tăng nhanh cần kiểm tra tốc độ bán hàng và ứ đọng vốn." },
+            { name: "Dòng tiền KD (OCF)", arr: d.cf.ocf, hint: "Phản ánh tiền thực tế chảy về từ kinh doanh cốt lõi." }
+          ].map(it => {
+            const p = F.yoyPct(it.arr, idx);
+            return { ...it, pct: p === null ? 0 : p, absPct: p === null ? 0 : Math.abs(p), diff: it.arr[idx] - it.arr[prev] };
+          }).sort((a, b) => b.absPct - a.absPct).slice(0, 5);
+
+          topEl.innerHTML = tracked.map(it => `
+            <div class="change-item ${it.diff >= 0 ? "up" : "down"}">
+              <div class="change-item-head">
+                <span>${it.name}</span>
+                <span class="${it.diff >= 0 ? "num-pos" : "num-neg"}">${it.pct >= 0 ? "▲ +" : "▼ "}${F.fmtPct(Math.abs(it.pct), 1)} (${it.diff >= 0 ? "+" : ""}${F.fmtNum(it.diff)} tỷ)</span>
+              </div>
+              <div class="muted" style="font-size:11.5px;">${d.periods[prev]}: ${F.fmtNum(it.arr[prev])} → ${pLabel}: ${F.fmtNum(it.arr[idx])} tỷ. ${it.hint}</div>
+            </div>
+          `).join("");
+        } else {
+          topEl.innerHTML = `<span class="muted">Cần ít nhất 2 kỳ/năm để xếp hạng Top 5 biến động.</span>`;
+        }
+
+        // ===== TEMPLATE 5: DỰ BÁO 3 KỊCH BẢN (Q2-Q4 / 3 KỲ TỚI) & 3 ƯU TIÊN CẢI THIỆN =====
+        const histGrowth = prev >= 0 ? F.yoyPct(d.is.revenue, idx) : 0.08;
+        const baseG = Math.max(-0.05, Math.min(0.25, histGrowth !== null ? histGrowth : 0.08));
+        const scenarios = [
+          { name: "Thận trọng", g: baseG - 0.05, margin: Math.max(0.03, r.netMargin - 0.015), color: "#f59e0b" },
+          { name: "Cơ sở", g: baseG, margin: Math.max(0.04, r.netMargin), color: "#2563eb" },
+          { name: "Tích cực", g: baseG + 0.06, margin: Math.max(0.05, r.netMargin + 0.02), color: "#059669" }
+        ];
+        const isQuarter = /Q\d/i.test(pLabel);
+        const fcLabels = isQuarter ? ["Q2 (Dự báo)", "Q3 (Dự báo)", "Q4 (Dự báo)"] : ["Năm +1", "Năm +2", "Năm +3"];
+        const qFactor = isQuarter ? 0.25 : 1; // quarterly step growth scaling
+
+        const scSeries = scenarios.map(sc => {
+          let curR = rev;
+          const revs = [], nps = [];
+          for (let k = 0; k < 3; k++) {
+            curR = curR * (1 + sc.g * qFactor);
+            revs.push(curR);
+            nps.push(curR * sc.margin);
+          }
+          return { ...sc, revs, nps, sumRev: revs.reduce((a, b) => a + b, 0), sumNp: nps.reduce((a, b) => a + b, 0) };
+        });
+
+        let t5Html = `<thead><tr><th>Kịch bản</th><th>${fcLabels[0]}</th><th>${fcLabels[1]}</th><th>${fcLabels[2]}</th><th>Tổng DT 3 kỳ</th><th>Tổng LNST dự kiến</th></tr></thead><tbody>`;
+        scSeries.forEach(s => {
+          t5Html += `<tr class="${s.name === "Cơ sở" ? "row-highlight" : ""}">
+            <td><strong>${s.name}</strong> (${s.g >= 0 ? "+" : ""}${F.fmtPct(s.g, 0)})</td>
+            <td>${F.fmtNum(s.revs[0])}</td><td>${F.fmtNum(s.revs[1])}</td><td>${F.fmtNum(s.revs[2])}</td>
+            <td><strong>${F.fmtNum(s.sumRev)} tỷ</strong></td>
+            <td class="num-pos">${F.fmtNum(s.sumNp)} tỷ</td>
+          </tr>`;
+        });
+        document.getElementById("autoTpl5Table").innerHTML = t5Html + `</tbody>`;
+
+        if (typeof Chart !== "undefined") {
+          destroyChart("tpl5Fc");
+          state.charts.tpl5Fc = new Chart(document.getElementById("autoTpl5Chart").getContext("2d"), {
+            type: "line",
+            data: {
+              labels: [pLabel, ...fcLabels],
+              datasets: scSeries.map(s => ({
+                label: `DT ${s.name}`,
+                data: [rev, ...s.revs],
+                borderColor: s.color,
+                backgroundColor: s.color,
+                borderWidth: s.name === "Cơ sở" ? 3 : 2,
+                borderDash: s.name === "Cơ sở" ? [] : [5, 4],
+                tension: 0.3
+              }))
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { title: { display: true, text: d.unit } } } }
+          });
+        }
+
+        const cashRelease = ((d.bs.receivables[idx] || 0) + (d.bs.inventory[idx] || 0)) * 0.15;
+        const marginGain = rev * 0.02;
+        document.getElementById("autoTpl5Recs").innerHTML = `
+          <div class="alert-item good">
+            <div class="alert-title">🥇 Ưu tiên #1: Giải phóng vốn lưu động (Tác động ước tính: +${F.fmtNum(cashRelease)} tỷ tiền mặt)</div>
+            <div class="alert-desc">Nếu giảm 15% số dư Phải thu (${F.fmtNum(d.bs.receivables[idx])} tỷ) và Hàng tồn kho (${F.fmtNum(d.bs.inventory[idx])} tỷ), doanh nghiệp sẽ giải phóng ngay khoảng <strong>+${F.fmtNum(cashRelease)} tỷ đồng</strong> tiền mặt về tài khoản.</div>
+          </div>
+          <div class="alert-item warn">
+            <div class="alert-title">🥈 Ưu tiên #2: Tối ưu biên lợi nhuận gộp &amp; định phí (+${F.fmtNum(marginGain)} tỷ lợi nhuận/kỳ)</div>
+            <div class="alert-desc">Chỉ cần đàm phán giảm giá vốn hoặc cắt giảm lãng phí BH&amp;QLDN tương đương 2% doanh thu sẽ mang lại thêm <strong>+${F.fmtNum(marginGain)} tỷ đồng</strong> lợi nhuận trước thuế.</div>
+          </div>
+          <div class="alert-item">
+            <div class="alert-title">🥉 Ưu tiên #3: Quản trị rủi ro lãi suất &amp; dự phòng dòng tiền</div>
+            <div class="alert-desc">Duy trì quỹ tiền mặt dự phòng tối thiểu 6 tháng chi phí cố định (hiện tại: ${F.fmtNum(runwayMonths, 1)} tháng) và theo dõi sát tỷ lệ OCF/LNST hàng tháng.</div>
+          </div>
+        `;
       }
+
+      window.filterAutoTemplates = function (val) {
+        ["all", "1", "2", "3", "4", "5"].forEach(k => {
+          document.getElementById("tplFilter-" + k)?.classList.toggle("active", k === val);
+        });
+        for (let i = 1; i <= 5; i++) {
+          const card = document.getElementById("autoTplCard-" + i);
+          if (card) card.classList.toggle("hidden-tpl", val !== "all" && val !== String(i));
+        }
+      };
+
+      window.toggleTplPrompt = function (num) {
+        document.getElementById("tplRawPrompt-" + num)?.classList.toggle("hidden");
+      };
 
       function renderUploadedChips() {
         const el = document.getElementById("uploadedFileChips");
