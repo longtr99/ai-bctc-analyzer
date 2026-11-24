@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v6.1</title>
+  <title>AI Phân Tích BCTC Cá Nhân v6.3</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -794,7 +794,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.1</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.3</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -803,6 +803,7 @@
       <select id="companySelect" class="sidebar-select" onchange="window.onSelectSample(this.value)">
         <option value="sample_5y">Mẫu 1: DN Sản xuất - TM (5 năm)</option>
         <option value="sample_q1_2026">Mẫu 2: Case Q1/2026 (Lãi TC, OCF âm)</option>
+        <option value="sample_masan">🏢 Tập đoàn Masan (2022–2025 · BCTC KPMG)</option>
         <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
       </select>
       <input type="text" id="companyNameInput" class="sidebar-input" placeholder="Nhập tên công ty..." onchange="window.onCompanyNameChange(this.value)" />
@@ -1181,11 +1182,8 @@
                 <span class="muted">Chọn nhanh 1 trong 5 mẫu câu hỏi hoặc tự nhập câu hỏi của bạn bên dưới</span>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <select id="docAiProvider" onchange="window.syncDocAiKey(true)" style="padding:6px 9px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;">
-                  <option value="gemini">Gemini (Hỗ trợ PDF/Word/Excel + Ảnh)</option>
-                  <option value="openai">OpenAI GPT-4o-mini (Hỗ trợ + Ảnh)</option>
-                </select>
-                <input type="password" id="docAiKey" placeholder="API Key (tùy chọn)..." onchange="window.syncDocAiKey(true)" style="padding:6px 10px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;width:185px;" />
+                <span id="docActiveAiBadge" class="badge">AI: gemini / gemini-3.8-flash</span>
+                <button class="btn btn-sm" onclick="window.switchTab('tab-ai')">⚙️ Đổi Nền tảng / API Key</button>
               </div>
             </div>
 
@@ -1370,22 +1368,44 @@
 
           <div class="card">
             <div class="card-header">
-              <h3>⚡ Gọi AI phân tích trực tiếp (Tùy chọn — API Key chỉ lưu trên máy bạn)</h3>
+              <div>
+                <h3>⚙️ Cấu Hình API Cá Nhân (11 Nền Tảng AI Phổ Biến · Lưu Cục Bộ)</h3>
+                <span class="muted">API Key chỉ lưu trong <code>localStorage</code> trên máy bạn, tự động đồng bộ cho Chat File BCTC &amp; Đọc PDF ảnh scan.</span>
+              </div>
+              <span class="badge badge-good">11 Providers · Model 2026</span>
             </div>
-            <div class="form-grid-3">
+
+            <div class="form-grid-2">
               <div class="input-box">
-                <label for="aiProviderSelect">Nhà cung cấp AI</label>
-                <select id="aiProviderSelect" onchange="window.saveAiConfig()">
-                  <option value="gemini">Google Gemini (gemini-2.5-flash)</option>
-                  <option value="openai">OpenAI (gpt-4o-mini)</option>
-                </select>
+                <label for="aiProviderSelect">Nhà cung cấp AI (11 nền tảng phổ biến)</label>
+                <select id="aiProviderSelect" onchange="window.onAiProviderChange()"></select>
               </div>
               <div class="input-box">
-                <label for="aiApiKeyInput">API Key cá nhân</label>
-                <input type="password" id="aiApiKeyInput" placeholder="Dán API Key..." onchange="window.saveAiConfig()" />
+                <label for="aiModelSelect">Tên Model (tự động cập nhật theo Nhà cung cấp)</label>
+                <select id="aiModelSelect" onchange="window.onAiModelChange()"></select>
+                <input type="text" id="aiCustomModelInput" class="hidden" placeholder="Nhập chính xác mã model (VD: gemini-3.8-flash)..." style="margin-top:6px;" />
               </div>
+            </div>
+
+            <div id="aiCustomUrlBox" class="input-box hidden" style="margin-top:10px;">
+              <label for="aiCustomBaseUrl">Endpoint URL (Chuẩn OpenAI-compatible, VD: http://localhost:11434/v1/chat/completions)</label>
+              <input type="text" id="aiCustomBaseUrl" placeholder="https://api.example.com/v1/chat/completions" />
+            </div>
+
+            <div class="input-box" style="margin-top:10px;">
+              <label for="aiApiKeyInput">API Key cá nhân của bạn</label>
+              <input type="password" id="aiApiKeyInput" placeholder="Dán API Key..." />
+              <span class="muted" id="aiProviderHint" style="font-size:11.5px;margin-top:2px;">Tạo key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--primary);font-weight:600;">aistudio.google.com/apikey</a></span>
+            </div>
+
+            <div class="action-row" style="padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border);">
+              <button class="btn" style="background:#0f172a;color:#fff;border-color:#0f172a;" onclick="window.saveAiConfig(true)">💾 Lưu Cấu Hình</button>
+              <span id="aiConfigSaveStatus" class="inline-status"></span>
+            </div>
+
+            <div class="form-grid-2">
               <div class="input-box">
-                <label for="aiTaskSelect">Chủ đề phân tích</label>
+                <label for="aiTaskSelect">Chủ đề phân tích nhanh</label>
                 <select id="aiTaskSelect">
                   <option value="variance">Giải thích biến động &amp; Nguyên nhân gốc rễ</option>
                   <option value="risks">Soát xét rủi ro &amp; Red Flags</option>
@@ -1394,10 +1414,10 @@
                   <option value="forecast">Đề xuất kịch bản Dự báo &amp; Dòng tiền</option>
                 </select>
               </div>
-            </div>
-            <div class="input-box" style="margin-top:10px;">
-              <label for="aiCustomQuestion">Câu hỏi bổ sung (tùy chọn)</label>
-              <input type="text" id="aiCustomQuestion" placeholder="Ví dụ: Đề xuất 3 việc cần làm ngay để cải thiện dòng tiền kinh doanh..." oninput="window.renderPromptLibrary()" />
+              <div class="input-box">
+                <label for="aiCustomQuestion">Câu hỏi bổ sung (tùy chọn)</label>
+                <input type="text" id="aiCustomQuestion" placeholder="Ví dụ: Đề xuất 3 việc cần làm ngay để cải thiện dòng tiền..." oninput="window.renderPromptLibrary()" />
+              </div>
             </div>
             <div class="action-row">
               <button class="btn btn-primary" id="runAiBtn" onclick="window.runDirectAiAnalysis()">🚀 Chạy phân tích AI ngay</button>
@@ -1594,6 +1614,41 @@
   <script>
     // ================= 1. DỮ LIỆU MẪU =================
     window.BCTC_SAMPLES = {
+      sample_masan: {
+        companyName: "Công ty Cổ phần Tập đoàn Masan (MSN)",
+        unit: "tỷ đồng",
+        periods: ["2022", "2023", "2024", "2025"],
+        budgetLatest: { revenue: 85000, grossProfit: 26000, ebitda: 12000, ebt: 8000, netProfit: 6500, ocf: 5000 },
+        is: {
+          revenue:         [76189.2, 78251.6, 83177.7, 81621.3],
+          cogs:            [55154.2, 56130.5, 58522.0, 56040.7],
+          sga:             [16365.9, 17942.4, 18482.4, 17916.3],
+          depreciation:    [4406.5,  4123.7,  4133.0,  3428.7],
+          finIncome:       [2575.6,  2405.2,  4043.5,  2094.2],
+          interestExpense: [6361.6,  8129.5,  7900.1,  6916.5],
+          otherProfit:     [4264.1,  4108.5,  3708.1,  5046.1],
+          taxExpense:      [392.8,   693.1,   1752.4,  1124.6]
+        },
+        bs: {
+          cash:            [13853.1, 10124.5, 18617.9, 12101.9],
+          receivables:     [13929.6, 11985.0, 21864.6, 5639.3],
+          inventory:       [14445.3, 13174.9, 10787.4, 11262.2],
+          otherCurrent:    [5446.6,  8479.1,  2299.8,  7231.2],
+          fixedAssets:     [43535.4, 42885.8, 37049.8, 35484.2],
+          longTermInvest:  [31333.9, 33219.5, 35318.8, 39473.1],
+          otherNonCurrent: [18799.0, 27514.8, 21646.6, 17771.3],
+          shortTermDebt:   [40567.4, 28030.2, 26724.2, 24331.0],
+          payables:        [24753.5, 22392.3, 31988.0, 15926.5],
+          longTermDebt:    [39385.2, 58723.7, 48120.2, 43627.1],
+          equity:          [36636.7, 38237.2, 40752.4, 45078.6]
+        },
+        cf: {
+          ocf:             [-3788.9, 500.5,   9525.5,  1369.6],
+          icf:             [-26447.3,-7823.7, -10693.5,16898.9],
+          fcfFin:          [21796.2, 3546.2,  9671.6,  -24783.8],
+          capex:           [4165.3,  2228.8,  3099.3,  1878.2]
+        }
+      },
       sample_5y: {
         companyName: "CTCP Sản Xuất & TM Minh Khôi (Mẫu 5 năm)",
         unit: "tỷ đồng",
@@ -2044,36 +2099,164 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         return `${tpl.basePrompt}${extra}\n\n---\n${buildContext(data, derived, alerts)}`;
       }
 
-      async function callAiApi({ provider, apiKey, prompt }) {
-        if (!apiKey || !apiKey.trim()) throw new Error("Vui lòng nhập API Key, hoặc dùng nút Copy kèm số liệu bên dưới để dán sang Claude/ChatGPT/Gemini miễn phí.");
-        const key = apiKey.trim();
-        if (provider === "gemini") {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+      const PROVIDERS = {
+        gemini: {
+          name: "Google Gemini (Khuyên dùng - Có gói miễn phí)",
+          hint: 'Tạo key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--primary);font-weight:600;">aistudio.google.com/apikey</a>',
+          models: ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview", "gemini-3.1-flash-lite"],
+          type: "gemini"
+        },
+        openai: {
+          name: "OpenAI (GPT-5 / GPT-4.1)",
+          hint: 'Tạo key tại <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--primary);font-weight:600;">platform.openai.com/api-keys</a>',
+          models: ["gpt-5-mini", "gpt-5", "gpt-4.1-mini", "gpt-4.1", "o3-mini"],
+          url: "https://api.openai.com/v1/chat/completions",
+          type: "openai"
+        },
+        anthropic: {
+          name: "Anthropic Claude (Sonnet / Opus / Haiku)",
+          hint: 'Tạo key tại <a href="https://console.anthropic.com/" target="_blank" style="color:var(--primary);font-weight:600;">console.anthropic.com</a>',
+          models: ["claude-sonnet-4-5", "claude-opus-4-5", "claude-haiku-4-5"],
+          url: "https://api.anthropic.com/v1/messages",
+          type: "anthropic"
+        },
+        openrouter: {
+          name: "OpenRouter (Đa model - Có nhiều model miễn phí)",
+          hint: 'Tạo key tại <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--primary);font-weight:600;">openrouter.ai/keys</a>',
+          models: ["google/gemini-3.8-flash", "anthropic/claude-sonnet-4.5", "openai/gpt-5-mini", "deepseek/deepseek-chat"],
+          url: "https://openrouter.ai/api/v1/chat/completions",
+          type: "openai"
+        },
+        deepseek: {
+          name: "DeepSeek (Giá siêu rẻ - Mạnh về phân tích số)",
+          hint: 'Tạo key tại <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:var(--primary);font-weight:600;">platform.deepseek.com</a>',
+          models: ["deepseek-chat", "deepseek-reasoner"],
+          url: "https://api.deepseek.com/chat/completions",
+          type: "openai"
+        },
+        groq: {
+          name: "Groq Cloud (Tốc độ siêu nhanh - Có gói miễn phí)",
+          hint: 'Tạo key miễn phí tại <a href="https://console.groq.com/keys" target="_blank" style="color:var(--primary);font-weight:600;">console.groq.com/keys</a>',
+          models: ["llama-3.3-70b-versatile", "meta-llama/llama-4-scout-17b-16e-instruct", "qwen-qwq-32b"],
+          url: "https://api.groq.com/openai/v1/chat/completions",
+          type: "openai"
+        },
+        xai: {
+          name: "xAI Grok (Grok 3)",
+          hint: 'Tạo key tại <a href="https://console.x.ai/" target="_blank" style="color:var(--primary);font-weight:600;">console.x.ai</a>',
+          models: ["grok-3", "grok-3-mini", "grok-2-vision-1212"],
+          url: "https://api.x.ai/v1/chat/completions",
+          type: "openai"
+        },
+        mistral: {
+          name: "Mistral AI (Mistral Large / Small)",
+          hint: 'Tạo key tại <a href="https://console.mistral.ai/api-keys" target="_blank" style="color:var(--primary);font-weight:600;">console.mistral.ai</a>',
+          models: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest"],
+          url: "https://api.mistral.ai/v1/chat/completions",
+          type: "openai"
+        },
+        perplexity: {
+          name: "Perplexity Sonar (Có tìm kiếm thời gian thực)",
+          hint: 'Tạo key tại <a href="https://www.perplexity.ai/settings/api" target="_blank" style="color:var(--primary);font-weight:600;">perplexity.ai/settings/api</a>',
+          models: ["sonar-pro", "sonar", "sonar-reasoning-pro"],
+          url: "https://api.perplexity.ai/chat/completions",
+          type: "openai"
+        },
+        together: {
+          name: "Together AI (Open-source Llama / DeepSeek / Qwen)",
+          hint: 'Tạo key tại <a href="https://api.together.xyz/settings/api-keys" target="_blank" style="color:var(--primary);font-weight:600;">api.together.xyz</a>',
+          models: ["meta-llama/Llama-3.3-70B-Instruct-Turbo", "deepseek-ai/DeepSeek-V3"],
+          url: "https://api.together.xyz/v1/chat/completions",
+          type: "openai"
+        },
+        custom: {
+          name: "Tùy chỉnh (Ollama Local / OpenAI-Compatible)",
+          hint: "Dùng cho server riêng, proxy hoặc Ollama chạy cục bộ trên máy.",
+          models: [],
+          url: "http://localhost:11434/v1/chat/completions",
+          type: "openai"
+        }
+      };
+
+      async function callAiApi({ provider, model, apiKey, prompt, images = [], customBaseUrl = "" }) {
+        const cfg = PROVIDERS[provider] || PROVIDERS.gemini;
+        const mdl = (model || cfg.models[0] || "gemini-3.8-flash").trim();
+        const key = (apiKey || "").trim();
+        if (!key && provider !== "custom") {
+          throw new Error("Vui lòng nhập API Key và bấm 'Lưu Cấu Hình' ở tab Báo cáo & Trợ lý AI.");
+        }
+
+        if (cfg.type === "gemini") {
+          const parts = [{ text: prompt }];
+          (images || []).forEach(img => {
+            const b64 = img.includes(",") ? img.split(",")[1] : img;
+            parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
+          });
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mdl)}:generateContent?key=${encodeURIComponent(key)}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            body: JSON.stringify({ contents: [{ parts }] })
           });
           const j = await res.json();
-          if (!res.ok) throw new Error(j?.error?.message || `Lỗi Gemini API (${res.status})`);
+          if (!res.ok) throw new Error(j?.error?.message || `Lỗi Gemini (${res.status}) với model ${mdl}`);
           return j?.candidates?.[0]?.content?.parts?.[0]?.text || "Không có phản hồi.";
         }
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+
+        if (cfg.type === "anthropic") {
+          const content = [{ type: "text", text: prompt }];
+          (images || []).forEach(img => {
+            const b64 = img.includes(",") ? img.split(",")[1] : img;
+            content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: b64 } });
+          });
+          const res = await fetch(cfg.url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": key,
+              "anthropic-version": "2023-06-01",
+              "anthropic-dangerous-direct-browser-access": "true"
+            },
+            body: JSON.stringify({
+              model: mdl,
+              max_tokens: 4096,
+              messages: [{ role: "user", content }]
+            })
+          });
+          const j = await res.json();
+          if (!res.ok) throw new Error(j?.error?.message || `Lỗi Claude (${res.status})`);
+          return j?.content?.[0]?.text || "Không có phản hồi.";
+        }
+
+        // OpenAI-compatible (OpenAI, OpenRouter, DeepSeek, Groq, xAI, Mistral, Perplexity, Together, Custom)
+        const endpoint = (provider === "custom" && customBaseUrl) ? customBaseUrl.trim() : cfg.url;
+        const headers = { "Content-Type": "application/json" };
+        if (key) headers["Authorization"] = `Bearer ${key}`;
+        if (provider === "openrouter") {
+          headers["HTTP-Referer"] = window.location.href;
+          headers["X-Title"] = "AI Phan Tich BCTC";
+        }
+        let userContent = prompt;
+        if (images && images.length) {
+          userContent = [{ type: "text", text: prompt }];
+          images.forEach(img => userContent.push({ type: "image_url", image_url: { url: img } }));
+        }
+        const res = await fetch(endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+          headers,
           body: JSON.stringify({
-            model: "gpt-4o-mini",
+            model: mdl,
             messages: [
               { role: "system", content: "Bạn là chuyên gia phân tích tài chính doanh nghiệp (CFO), trả lời bằng tiếng Việt rõ ràng, có số liệu." },
-              { role: "user", content: prompt }
+              { role: "user", content: userContent }
             ]
           })
         });
         const j = await res.json();
-        if (!res.ok) throw new Error(j?.error?.message || `Lỗi OpenAI API (${res.status})`);
+        if (!res.ok) throw new Error(j?.error?.message || `Lỗi ${cfg.name} (${res.status}) với model ${mdl}`);
         return j?.choices?.[0]?.message?.content || "Không có phản hồi.";
       }
 
-      return { TEMPLATES, getContextualizedPrompt, callAiApi };
+      return { TEMPLATES, PROVIDERS, getContextualizedPrompt, callAiApi };
     })();
 
     // ================= 4. APP CONTROLLER =================
@@ -2137,12 +2320,80 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         state.data = deepClone(window.BCTC_SAMPLES.sample_5y);
       }
 
+      function populateProviderDropdown() {
+        const sel = document.getElementById("aiProviderSelect");
+        if (!sel) return;
+        sel.innerHTML = Object.entries(window.AIPrompts.PROVIDERS)
+          .map(([k, p]) => `<option value="${k}">${p.name}</option>`)
+          .join("");
+      }
+
+      function populateModelDropdown(providerKey, selectedModel) {
+        const p = window.AIPrompts.PROVIDERS[providerKey] || window.AIPrompts.PROVIDERS.gemini;
+        const mSel = document.getElementById("aiModelSelect");
+        const cInp = document.getElementById("aiCustomModelInput");
+        const hintEl = document.getElementById("aiProviderHint");
+        const urlBox = document.getElementById("aiCustomUrlBox");
+
+        if (hintEl) hintEl.innerHTML = p.hint || "";
+        if (urlBox) urlBox.classList.toggle("hidden", providerKey !== "custom");
+
+        if (!mSel) return;
+        const opts = p.models.map(m => `<option value="${m}">${m}</option>`).join("")
+          + `<option value="__custom__">✏️ Tự nhập tên model khác...</option>`;
+        mSel.innerHTML = opts;
+
+        if (selectedModel && p.models.includes(selectedModel)) {
+          mSel.value = selectedModel;
+          cInp.classList.add("hidden");
+        } else if (selectedModel) {
+          mSel.value = "__custom__";
+          cInp.value = selectedModel;
+          cInp.classList.remove("hidden");
+        } else if (p.models.length) {
+          mSel.value = p.models[0];
+          cInp.classList.add("hidden");
+        } else {
+          mSel.value = "__custom__";
+          cInp.classList.remove("hidden");
+        }
+      }
+
+      function getActiveAiConfig() {
+        const provider = document.getElementById("aiProviderSelect")?.value || "gemini";
+        const mSelVal = document.getElementById("aiModelSelect")?.value || "";
+        const customM = document.getElementById("aiCustomModelInput")?.value?.trim() || "";
+        const p = window.AIPrompts.PROVIDERS[provider] || window.AIPrompts.PROVIDERS.gemini;
+        const model = (mSelVal === "__custom__") ? (customM || p.models[0] || "gemini-3.8-flash") : (mSelVal || p.models[0] || "gemini-3.8-flash");
+        const apiKey = document.getElementById("aiApiKeyInput")?.value?.trim() || "";
+        const customBaseUrl = document.getElementById("aiCustomBaseUrl")?.value?.trim() || "";
+        return { provider, model, apiKey, customBaseUrl };
+      }
+
+      function updateDocAiBadge() {
+        const cfg = getActiveAiConfig();
+        const badge = document.getElementById("docActiveAiBadge");
+        if (badge) {
+          badge.textContent = `AI: ${cfg.provider} / ${cfg.model}` + (cfg.apiKey ? " ✅" : " (chưa có key)");
+        }
+      }
+
       function loadAiCfg() {
+        populateProviderDropdown();
         try {
           const c = JSON.parse(localStorage.getItem(AI_CFG_KEY) || "{}");
-          if (c.provider) document.getElementById("aiProviderSelect").value = c.provider;
+          const prov = (c.provider && window.AIPrompts.PROVIDERS[c.provider]) ? c.provider : "gemini";
+          document.getElementById("aiProviderSelect").value = prov;
+          // Auto-migrate deprecated gemini-2.5-flash to gemini-3.8-flash
+          let savedModel = c.model || "";
+          if (savedModel === "gemini-2.5-flash" || savedModel === "gemini-2.0-flash") savedModel = "gemini-3.8-flash";
+          populateModelDropdown(prov, savedModel);
           if (c.apiKey) document.getElementById("aiApiKeyInput").value = c.apiKey;
-        } catch (e) {}
+          if (c.customBaseUrl) document.getElementById("aiCustomBaseUrl").value = c.customBaseUrl;
+        } catch (e) {
+          populateModelDropdown("gemini", "gemini-3.8-flash");
+        }
+        updateDocAiBadge();
       }
 
       function destroyChart(k) {
@@ -2865,8 +3116,27 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
       window.updateForecast = updateForecast;
       window.updateValuationAndPeer = updateValuationAndPeer;
       window.renderPromptLibrary = renderPromptLibrary;
-      window.saveAiConfig = function () {
-        try { localStorage.setItem(AI_CFG_KEY, JSON.stringify({ provider: document.getElementById("aiProviderSelect").value, apiKey: document.getElementById("aiApiKeyInput").value })); } catch (e) {}
+      window.onAiProviderChange = function () {
+        const prov = document.getElementById("aiProviderSelect").value;
+        populateModelDropdown(prov, "");
+        window.saveAiConfig(false);
+      };
+      window.onAiModelChange = function () {
+        const isCustom = document.getElementById("aiModelSelect").value === "__custom__";
+        const inp = document.getElementById("aiCustomModelInput");
+        inp.classList.toggle("hidden", !isCustom);
+        if (isCustom) inp.focus();
+        window.saveAiConfig(false);
+      };
+      window.saveAiConfig = function (showNotice) {
+        const cfg = getActiveAiConfig();
+        try { localStorage.setItem(AI_CFG_KEY, JSON.stringify(cfg)); } catch (e) {}
+        updateDocAiBadge();
+        if (showNotice) {
+          const st = document.getElementById("aiConfigSaveStatus");
+          if (st) st.textContent = `✅ Đã lưu cấu hình (${cfg.provider} / ${cfg.model}) thành công!`;
+          showStatus(`✅ Đã lưu cấu hình AI: ${cfg.provider} / ${cfg.model}`);
+        }
       };
       window.generateOfflineReport = function () {
         const md = F.generateOfflineReport(state.data, state.derived, state.alerts, document.getElementById("reportTypeSelect").value);
@@ -2898,8 +3168,9 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         const btn = document.getElementById("runAiBtn"), st = document.getElementById("aiCallStatus"), out = document.getElementById("aiResponseBox");
         btn.disabled = true; st.className = "inline-status"; st.textContent = "⏳ Đang gửi số liệu tới AI...";
         try {
+          const cfg = getActiveAiConfig();
           const prompt = window.AIPrompts.getContextualizedPrompt(document.getElementById("aiTaskSelect").value, state.data, state.derived, state.alerts, document.getElementById("aiCustomQuestion").value);
-          const reply = await window.AIPrompts.callAiApi({ provider: document.getElementById("aiProviderSelect").value, apiKey: document.getElementById("aiApiKeyInput").value, prompt });
+          const reply = await window.AIPrompts.callAiApi({ ...cfg, prompt });
           out.textContent = reply; out.classList.remove("hidden"); st.textContent = "✅ Hoàn tất!";
         } catch (err) {
           st.className = "inline-status error"; st.textContent = "❌ " + err.message;
@@ -3271,19 +3542,55 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           });
           return { name: file.name, type: "image", text: `[Ảnh chụp bảng biểu: ${file.name}]`, imageBase64: dataUrl, mimeType: file.type || "image/jpeg" };
         }
-        // PDF
+        // PDF (Hỗ trợ cả PDF có chữ chuẩn & PDF dạng ảnh scan)
         if (ext === "pdf") {
           if (typeof pdfjsLib === "undefined") throw new Error("Thư viện PDF.js chưa tải xong (cần kết nối mạng).");
           pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
           const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
           let fullText = "";
-          const maxPages = Math.min(pdf.numPages, 30);
+          let rawCharCount = 0;
+          const maxPages = Math.min(pdf.numPages, 25);
           for (let p = 1; p <= maxPages; p++) {
             const page = await pdf.getPage(p);
             const content = await page.getTextContent();
-            fullText += `\n--- Trang ${p} ---\n` + content.items.map(it => it.str).join(" ");
+            // Gom các mục văn bản theo cùng dòng (tọa độ Y) để giữ nguyên cấu trúc bảng
+            const rowsMap = new Map();
+            content.items.forEach(it => {
+              const s = (it.str || "").trim();
+              if (!s) return;
+              rawCharCount += s.length;
+              const y = Math.round((it.transform ? it.transform[5] : 0) / 4) * 4;
+              if (!rowsMap.has(y)) rowsMap.set(y, []);
+              rowsMap.get(y).push({ x: it.transform ? it.transform[4] : 0, s });
+            });
+            const sortedLines = Array.from(rowsMap.entries())
+              .sort((a, b) => b[0] - a[0])
+              .map(([_, items]) => items.sort((a, b) => a.x - b.x).map(i => i.s).join(" "));
+            fullText += `\n--- Trang ${p} ---\n` + sortedLines.join("\n");
           }
-          return { name: file.name, type: "pdf", text: fullText.trim() || "(PDF dạng ảnh scan — hãy chụp ảnh bảng biểu tải lên để AI đọc trực tiếp)" };
+          const isScanned = rawCharCount < 150;
+          const pageImages = [];
+          if (isScanned) {
+            // Chuyển các trang chính (Bìa + CĐKT + KQKD + LCTT: trang 1..14) sang ảnh JPEG để Vision AI đọc trực tiếp
+            const imgPages = Math.min(pdf.numPages, 14);
+            for (let p = 1; p <= imgPages; p++) {
+              const page = await pdf.getPage(p);
+              const vp = page.getViewport({ scale: 1.35 });
+              const canvas = document.createElement("canvas");
+              canvas.width = vp.width;
+              canvas.height = vp.height;
+              const ctx = canvas.getContext("2d");
+              await page.render({ canvasContext: ctx, viewport: vp }).promise;
+              pageImages.push(canvas.toDataURL("image/jpeg", 0.72));
+            }
+          }
+          return {
+            name: file.name,
+            type: "pdf",
+            isScanned,
+            pageImages,
+            text: isScanned ? "(PDF dạng ảnh scan — không có lớp văn bản)" : fullText.trim()
+          };
         }
         // Word (.docx)
         if (ext === "docx") {
@@ -3327,13 +3634,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         return docState.files.map((f, i) => `=== FILE ${i + 1}: ${f.name} ===\n${f.text.slice(0, 28000)}`).join("\n\n");
       }
 
-      window.syncDocAiKey = function (fromDoc) {
-        const p1 = document.getElementById("aiProviderSelect"), k1 = document.getElementById("aiApiKeyInput");
-        const p2 = document.getElementById("docAiProvider"), k2 = document.getElementById("docAiKey");
-        if (fromDoc) { p1.value = p2.value; k1.value = k2.value; }
-        else { p2.value = p1.value; k2.value = k1.value; }
-        window.saveAiConfig();
-      };
+      window.syncDocAiKey = function () { updateDocAiBadge(); };
 
       window.onDocDragOver = function (e) { e.preventDefault(); document.getElementById("docDropzone").classList.add("dragover"); };
       window.onDocDragLeave = function () { document.getElementById("docDropzone").classList.remove("dragover"); };
@@ -3395,15 +3696,14 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         const inp = document.getElementById("docChatInput");
         const q = inp.value.trim();
         if (!q) return showStatus("Vui lòng nhập câu hỏi trước.", "warn");
-        const provider = document.getElementById("docAiProvider").value;
-        const apiKey = document.getElementById("docAiKey").value.trim();
+        const cfg = getActiveAiConfig();
         const btn = document.getElementById("docSendBtn");
 
         appendChatMsg("user", q);
         inp.value = "";
 
-        if (!apiKey) {
-          appendChatMsg("ai", "ℹ️ Bạn chưa nhập API Key. Bạn có thể bấm nút '📋 Copy kèm file' để dán miễn phí sang Claude/ChatGPT/Gemini, hoặc dán Gemini/OpenAI API Key ở góc trên để AI trả lời trực tiếp tại đây.");
+        if (!cfg.apiKey && cfg.provider !== "custom") {
+          appendChatMsg("ai", "ℹ️ Bạn chưa cấu hình API Key. Bấm nút '⚙️ Đổi Nền tảng / API Key' ở góc trên để lưu key, hoặc bấm '📋 Copy kèm file' để dán miễn phí sang Claude/ChatGPT/Gemini.");
           return;
         }
 
@@ -3412,41 +3712,12 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         try {
           const textContext = buildCombinedDocText();
           const fullPrompt = `${q}\n\n${textContext ? "--- DỮ LIỆU TỪ CÁC FILE BCTC ĐÃ TẢI LÊN ---\n" + textContext : "(Không có file đính kèm)"}`;
-          const images = docState.files.filter(f => f.imageBase64);
-          let reply = "";
-
-          if (provider === "gemini") {
-            const parts = [{ text: fullPrompt }];
-            images.forEach(img => {
-              const b64 = img.imageBase64.split(",")[1];
-              parts.push({ inline_data: { mime_type: img.mimeType || "image/jpeg", data: b64 } });
-            });
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ contents: [{ parts }] })
-            });
-            const j = await res.json();
-            if (!res.ok) throw new Error(j?.error?.message || `Lỗi Gemini API (${res.status})`);
-            reply = j?.candidates?.[0]?.content?.parts?.[0]?.text || "Không nhận được phản hồi.";
-          } else {
-            const content = [{ type: "text", text: fullPrompt }];
-            images.forEach(img => content.push({ type: "image_url", image_url: { url: img.imageBase64 } }));
-            const res = await fetch("https://api.openai.com/v1/chat/completions", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-              body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages: [
-                  { role: "system", content: "Bạn là chuyên gia phân tích báo cáo tài chính (CFO). Trả lời rõ ràng, chính xác bằng tiếng Việt, lập bảng Markdown khi so sánh." },
-                  { role: "user", content }
-                ]
-              })
-            });
-            const j = await res.json();
-            if (!res.ok) throw new Error(j?.error?.message || `Lỗi OpenAI API (${res.status})`);
-            reply = j?.choices?.[0]?.message?.content || "Không nhận được phản hồi.";
-          }
+          const images = [];
+          docState.files.forEach(f => {
+            if (f.imageBase64) images.push(f.imageBase64);
+            if (f.pageImages && f.pageImages.length) f.pageImages.slice(0, 8).forEach(im => images.push(im));
+          });
+          const reply = await window.AIPrompts.callAiApi({ ...cfg, prompt: fullPrompt, images: images.slice(0, 14) });
           appendChatMsg("ai", reply);
         } catch (err) {
           appendChatMsg("ai", "❌ Lỗi gọi AI: " + err.message);
@@ -3746,23 +4017,31 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         return rec;
       }
 
-      async function tryAiJsonExtraction(combinedText, fileNames) {
-        const apiKey = document.getElementById("aiApiKeyInput")?.value?.trim() || document.getElementById("docAiKey")?.value?.trim();
-        const provider = document.getElementById("aiProviderSelect")?.value || "gemini";
-        if (!apiKey) return null;
+      async function tryAiJsonExtraction(parsedDocs, fileNames) {
+        const cfg = getActiveAiConfig();
+        if (!cfg.apiKey && cfg.provider !== "custom") return null;
 
-        const prompt = `Bạn là hệ thống trích xuất BCTC tự động. Hãy đọc dữ liệu sau từ các file (${fileNames.join(", ")}) và trả về DUY NHẤT 1 khối JSON hợp lệ (không giải thích thêm, không markdown) theo cấu trúc sau (đơn vị quy đổi về TỶ ĐỒNG, các chi phí cogs/sga/depreciation/interestExpense/taxExpense/capex ghi SỐ DƯƠNG):
+        const combinedText = parsedDocs.map(d => `=== ${d.name} ===\n${d.text}`).join("\n\n");
+        const allImages = [];
+        parsedDocs.forEach(d => {
+          if (d.pageImages && d.pageImages.length) {
+            // Lấy tối đa 8 ảnh/file (bìa + các trang bảng CĐKT, KQKD, LCTT) để tối ưu tốc độ
+            d.pageImages.slice(0, 14).forEach(img => { if (allImages.length < 24) allImages.push(img); });
+          }
+        });
+
+        const prompt = `Bạn là hệ thống trích xuất BCTC tự động. Hãy đọc chính xác tên công ty và số liệu từ các tài liệu (${fileNames.join(", ")}) rồi trả về DUY NHẤT 1 khối JSON hợp lệ (không giải thích thêm, không markdown) theo cấu trúc sau (đơn vị quy đổi về TỶ ĐỒNG, làm tròn 1 chữ số thập phân; các chi phí cogs, sga [= CP bán hàng + CP QLDN], depreciation, interestExpense, taxExpense, capex ghi SỐ DƯƠNG):
 {
-  "companyName": "Tên công ty",
-  "periods": ["2023", "2024"],
-  "is": { "revenue": [0,0], "cogs": [0,0], "sga": [0,0], "depreciation": [0,0], "finIncome": [0,0], "interestExpense": [0,0], "otherProfit": [0,0], "taxExpense": [0,0] },
-  "bs": { "cash": [0,0], "receivables": [0,0], "inventory": [0,0], "otherCurrent": [0,0], "fixedAssets": [0,0], "longTermInvest": [0,0], "otherNonCurrent": [0,0], "shortTermDebt": [0,0], "payables": [0,0], "longTermDebt": [0,0], "equity": [0,0] },
-  "cf": { "ocf": [0,0], "icf": [0,0], "fcfFin": [0,0], "capex": [0,0] }
+  "companyName": "Tên đầy đủ của doanh nghiệp trong báo cáo",
+  "periods": ["2022", "2023", "2024", "2025"],
+  "is": { "revenue": [], "cogs": [], "sga": [], "depreciation": [], "finIncome": [], "interestExpense": [], "otherProfit": [], "taxExpense": [] },
+  "bs": { "cash": [], "receivables": [], "inventory": [], "otherCurrent": [], "fixedAssets": [], "longTermInvest": [], "otherNonCurrent": [], "shortTermDebt": [], "payables": [], "longTermDebt": [], "equity": [] },
+  "cf": { "ocf": [], "icf": [], "fcfFin": [], "capex": [] }
 }
-Dữ liệu gốc:\n${combinedText.slice(0, 32000)}`;
+Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
 
         try {
-          const raw = await window.AIPrompts.callAiApi({ provider, apiKey, prompt });
+          const raw = await window.AIPrompts.callAiApi({ ...cfg, prompt, images: allImages.slice(0, 16) });
           const match = raw.match(/\{[\s\S]*\}/);
           if (!match) return null;
           const parsed = JSON.parse(match[0]);
@@ -3770,7 +4049,7 @@ Dữ liệu gốc:\n${combinedText.slice(0, 32000)}`;
             return parsed;
           }
         } catch (e) {
-          console.warn("AI JSON extraction fallback error:", e);
+          console.warn("AI JSON extraction error:", e);
         }
         return null;
       }
@@ -3828,14 +4107,21 @@ Dữ liệu gốc:\n${combinedText.slice(0, 32000)}`;
           }
           renderUploadedChips();
 
-          // 3. If API Key is available and offline regex matched few items (complex PDF), try AI JSON extraction
+          // 3. Kiểm tra xem có phải PDF dạng ảnh scan không (như BCTC kiểm toán KPMG/Big4)
+          const hasScannedPdf = parsedDocs.some(d => d.isScanned);
           let finalData = null;
-          if (totalMatched < 4 * files.length) {
-            const hasKey = !!(document.getElementById("aiApiKeyInput")?.value?.trim() || document.getElementById("docAiKey")?.value?.trim());
+          if (hasScannedPdf || totalMatched < 4 * files.length) {
+            const _aiCfg = getActiveAiConfig(); const hasKey = !!(_aiCfg.apiKey || _aiCfg.provider === "custom");
             if (hasKey) {
-              stEl.textContent = "🤖 Đang dùng AI bóc tách chính xác bảng biểu...";
-              const combined = parsedDocs.map(d => `=== ${d.name} ===\n${d.text}`).join("\n\n");
-              finalData = await tryAiJsonExtraction(combined, files.map(f => f.name));
+              stEl.textContent = hasScannedPdf
+                ? "👁️ Phát hiện PDF ảnh scan — đang dùng Vision AI đọc bảng biểu..."
+                : "🤖 Đang dùng AI bóc tách chính xác bảng biểu...";
+              finalData = await tryAiJsonExtraction(parsedDocs, files.map(f => f.name));
+            } else if (hasScannedPdf) {
+              stEl.className = "master-upload-status error";
+              stEl.textContent = "⚠️ PDF dạng ảnh scan (không có chữ) — cần dán Gemini API Key để đọc tự động!";
+              showStatus("⚠️ Các file PDF bạn tải lên là PDF DẠNG ẢNH SCAN (không có lớp chữ nên trình duyệt không đọc offline được). Hãy dán Gemini API Key miễn phí ở tab 'Báo cáo & Trợ lý AI' rồi tải lại file để Vision AI tự đọc 100%!", "warn");
+              return;
             }
           }
 
