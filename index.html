@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v6.5</title>
+  <title>AI Phân Tích BCTC Cá Nhân v6.6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -811,7 +811,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.5</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.6</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -821,7 +821,14 @@
         <option value="sample_5y">Mẫu 1: DN Sản xuất - TM (5 năm)</option>
         <option value="sample_q1_2026">Mẫu 2: Case Q1/2026 (Lãi TC, OCF âm)</option>
         <option value="sample_masan">🏢 Tập đoàn Masan (2022–2025 · BCTC KPMG)</option>
+        <option value="sample_vinamilk">🥛 CTCP Sữa Việt Nam - Vinamilk (2021–2025)</option>
         <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
+      </select>
+      <div class="sidebar-section-label" style="margin-top:6px;">Chế độ chạy Auto (Filter)</div>
+      <select id="autoModeFilter" class="sidebar-select" onchange="window.onAutoModeFilterChange(this.value)" title="Chọn chế độ phân tích tự động theo Mẫu 1 (chuỗi nhiều năm) hoặc Mẫu 2 (so sánh 2 kỳ gần nhất)">
+        <option value="auto">🔄 Auto (Theo toàn bộ dữ liệu)</option>
+        <option value="mode1">📊 Chạy Auto theo Mẫu 1 (Xu hướng 3–5 năm)</option>
+        <option value="mode2">⚡ Chạy Auto theo Mẫu 2 (So sánh 2 kỳ gần nhất)</option>
       </select>
       <input type="text" id="companyNameInput" class="sidebar-input" placeholder="Nhập tên công ty..." onchange="window.onCompanyNameChange(this.value)" />
       <label class="master-upload-btn" title="Tải 1 hoặc nhiều file BCTC (Excel, PDF, Word) của 1 năm hoặc nhiều năm để tự động bóc số liệu chạy toàn bộ app">
@@ -885,6 +892,14 @@
           <p id="topbarSubtitle">Đơn vị tính: Tỷ đồng · Tự động lưu cục bộ trên trình duyệt</p>
         </div>
         <div class="topbar-right">
+          <div class="period-pill-wrap" title="Chuyển nhanh chế độ chạy Auto Mẫu 1 / Mẫu 2">
+            <span>Chế độ:</span>
+            <select id="topbarModeFilter" onchange="window.onAutoModeFilterChange(this.value)">
+              <option value="auto">Auto (Đủ kỳ)</option>
+              <option value="mode1">Auto Mẫu 1 (3–5 năm)</option>
+              <option value="mode2">Auto Mẫu 2 (2 kỳ gần nhất)</option>
+            </select>
+          </div>
           <div class="period-pill-wrap">
             <span>Kỳ xem:</span>
             <select id="dashboardPeriodSelect" onchange="window.renderDashboard()"></select>
@@ -1658,6 +1673,41 @@
   <script>
     // ================= 1. DỮ LIỆU MẪU =================
     window.BCTC_SAMPLES = {
+      sample_vinamilk: {
+        companyName: "Công ty Cổ phần Sữa Việt Nam (Vinamilk)",
+        unit: "tỷ đồng",
+        periods: ["2021", "2022", "2023", "2024", "2025"],
+        budgetLatest: { revenue: 64500, grossProfit: 26800, ebitda: 14200, ebt: 12100, netProfit: 9615, ocf: 9500 },
+        is: {
+          revenue:         [60919.0, 59956.0, 60369.0, 61783.0, 63646.0],
+          cogs:            [34640.0, 36059.0, 35824.0, 36205.0, 37420.0],
+          sga:             [14470.0, 14190.0, 14420.0, 14750.0, 15280.0],
+          depreciation:    [2120.0,  2090.0,  2045.0,  2110.0,  2180.0],
+          finIncome:       [1215.0,  1380.0,  1716.0,  1570.0,  1510.0],
+          interestExpense: [296.0,   596.0,   937.0,   804.0,   796.0],
+          otherProfit:     [194.0,   5.0,     64.0,    6.0,     -10.0],
+          taxExpense:      [2289.0,  1918.0,  1949.0,  2147.0,  2236.0]
+        },
+        bs: {
+          cash:            [23348.0, 19714.0, 23042.0, 25488.0, 23137.0],
+          receivables:     [5822.0,  6100.0,  6530.0,  6120.0,  5890.0],
+          inventory:       [6773.0,  5538.0,  6128.0,  5686.0,  6110.0],
+          otherCurrent:    [164.0,   208.0,   236.0,   250.0,   230.0],
+          fixedAssets:     [12706.0, 11903.0, 12690.0, 13010.0, 13450.0],
+          longTermInvest:  [743.0,   742.0,   827.0,   895.0,   915.0],
+          otherNonCurrent: [3776.0,  4278.0,  3220.0,  3600.0,  3580.0],
+          shortTermDebt:   [9382.0,  4867.0,  8218.0,  8990.0,  9180.0],
+          payables:        [7688.0,  10487.0, 9162.0,  9602.0,  9355.0],
+          longTermDebt:    [412.0,   312.0,   267.0,   283.0,   277.0],
+          equity:          [35850.0, 32817.0, 35026.0, 36174.0, 34500.0]
+        },
+        cf: {
+          ocf:             [9432.0,  8826.0,  7887.0,  9650.0,  9280.0],
+          icf:             [-5224.0, 1315.0,  -4150.0, -3210.0, -1850.0],
+          fcfFin:          [-3950.0, -10210.0,-3120.0, -5890.0, -8120.0],
+          capex:           [1540.0,  1456.0,  1610.0,  1920.0,  2150.0]
+        }
+      },
       sample_masan: {
         companyName: "Công ty Cổ phần Tập đoàn Masan (MSN)",
         unit: "tỷ đồng",
@@ -2323,7 +2373,9 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
 
       const state = {
         sampleKey: "sample_5y",
+        rawData: null,
         data: null,
+        autoMode: "auto",
         derived: null,
         alerts: [],
         statementType: "is",
@@ -2446,7 +2498,44 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         if (state.charts[k]) { state.charts[k].destroy(); state.charts[k] = null; }
       }
 
+      function applyAutoModeToData() {
+        if (!state.rawData) state.rawData = deepClone(state.data);
+        const src = state.rawData;
+        const n = src.periods.length;
+        if (state.autoMode === "mode2" && n > 2) {
+          // Chế độ Mẫu 2: Tự động cắt lấy 2 kỳ gần nhất để so sánh YoY/QoQ sắc nét
+          const sliced = deepClone(src);
+          sliced.periods = src.periods.slice(n - 2);
+          ["is", "bs", "cf"].forEach(sec => {
+            Object.keys(sliced[sec]).forEach(k => {
+              sliced[sec][k] = src[sec][k].slice(n - 2);
+            });
+          });
+          state.data = sliced;
+        } else {
+          state.data = deepClone(src);
+        }
+      }
+
+      window.onAutoModeFilterChange = function (mode) {
+        state.autoMode = mode || "auto";
+        const s1 = document.getElementById("autoModeFilter");
+        const s2 = document.getElementById("topbarModeFilter");
+        if (s1) s1.value = state.autoMode;
+        if (s2) s2.value = state.autoMode;
+        applyAutoModeToData();
+        recomputeAll();
+        if (state.autoMode === "mode1") {
+          showStatus("📊 Đang chạy Auto theo Mẫu 1: Phân tích chuỗi nhiều năm (Xu hướng biên LN, tồn kho, phải thu & dự báo 3 năm).");
+        } else if (state.autoMode === "mode2") {
+          showStatus("⚡ Đang chạy Auto theo Mẫu 2: Tập trung so sánh 2 kỳ gần nhất (Bóc tách Lãi tài chính vs HĐKD & Dòng tiền OCF).");
+        } else {
+          showStatus("🔄 Đang chạy Auto theo toàn bộ dữ liệu hiện có.");
+        }
+      };
+
       function recomputeAll() {
+        if (!state.rawData) state.rawData = deepClone(state.data);
         state.derived = F.computeDerived(state.data);
         state.alerts = F.detectRisksAndVariance(state.data, state.derived);
         saveLocal();
@@ -3129,7 +3218,8 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         if (val === "custom") { state.sampleKey = "custom"; saveLocal(); return; }
         if (window.BCTC_SAMPLES[val]) {
           state.sampleKey = val;
-          state.data = deepClone(window.BCTC_SAMPLES[val]);
+          state.rawData = deepClone(window.BCTC_SAMPLES[val]);
+          applyAutoModeToData();
           recomputeAll();
           showStatus(`Đã nạp: ${state.data.companyName}`);
         }
@@ -3145,7 +3235,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         ["abs", "vertical", "horizontal"].forEach(k => document.getElementById("mode-" + k).classList.toggle("active", k === m));
         renderStatementTable();
       };
-      window.onCellEdit = function (sec, k, i, v) { state.data[sec][k][i] = isNaN(Number(v)) ? 0 : Number(v); state.sampleKey = "custom"; recomputeAll(); };
+      window.onCellEdit = function (sec, k, i, v) { const val = isNaN(Number(v)) ? 0 : Number(v); state.data[sec][k][i] = val; if (state.rawData && state.rawData[sec] && state.rawData[sec][k]) { const offset = state.rawData.periods.length - state.data.periods.length; state.rawData[sec][k][i + offset] = val; } state.sampleKey = "custom"; recomputeAll(); };
       window.onBudgetEdit = function (k, v) { if (!state.data.budgetLatest) state.data.budgetLatest = {}; state.data.budgetLatest[k] = Number(v) || 0; state.sampleKey = "custom"; recomputeAll(); };
       window.addNewPeriod = function () {
         const lbl = prompt("Nhập tên kỳ/năm mới (VD: 2027 hoặc Q2/2026):", "2027");
@@ -3261,7 +3351,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
             const s = String(rows[r][0] || "").trim().toLowerCase(), k = String(rows[r][1] || "").trim();
             if (nd[s] && nd[s][k]) nd[s][k] = periods.map((_, i) => Number(rows[r][3 + i]) || 0);
           }
-          state.data = nd; state.sampleKey = "custom"; recomputeAll();
+          state.rawData = deepClone(nd); applyAutoModeToData(); state.sampleKey = "custom"; recomputeAll();
           showStatus(`Đã nhập "${file.name}" (${periods.length} kỳ).`);
         } catch (e) { showStatus("Lỗi nhập Excel: " + e.message, "error"); } finally { ev.target.value = ""; }
       };
@@ -3276,7 +3366,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         try {
           const p = JSON.parse(await file.text());
           if (!p.periods || !p.is || !p.bs || !p.cf) throw new Error("File JSON không đúng định dạng BCTC.");
-          state.data = p; state.sampleKey = "custom"; recomputeAll();
+          state.rawData = deepClone(p); applyAutoModeToData(); state.sampleKey = "custom"; recomputeAll();
           showStatus(`Đã khôi phục "${file.name}".`);
         } catch (e) { showStatus("Lỗi đọc JSON: " + e.message, "error"); } finally { ev.target.value = ""; }
       };
@@ -3608,24 +3698,44 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
           let fullText = "";
           let rawCharCount = 0;
-          const maxPages = Math.min(pdf.numPages, 25);
-          for (let p = 1; p <= maxPages; p++) {
+          const totalPages = pdf.numPages;
+          const isLargeReport = totalPages > 35;
+          let headerText = "";
+          let bctcText = "";
+          const maxScan = Math.min(totalPages, 220);
+          for (let p = 1; p <= maxScan; p++) {
             const page = await pdf.getPage(p);
             const content = await page.getTextContent();
-            // Gom các mục văn bản theo cùng dòng (tọa độ Y) để giữ nguyên cấu trúc bảng
             const rowsMap = new Map();
+            let pageChars = 0;
             content.items.forEach(it => {
               const s = (it.str || "").trim();
               if (!s) return;
-              rawCharCount += s.length;
+              pageChars += s.length;
               const y = Math.round((it.transform ? it.transform[5] : 0) / 4) * 4;
               if (!rowsMap.has(y)) rowsMap.set(y, []);
               rowsMap.get(y).push({ x: it.transform ? it.transform[4] : 0, s });
             });
+            rawCharCount += pageChars;
             const sortedLines = Array.from(rowsMap.entries())
               .sort((a, b) => b[0] - a[0])
               .map(([_, items]) => items.sort((a, b) => a.x - b.x).map(i => i.s).join(" "));
-            fullText += `\n--- Trang ${p} ---\n` + sortedLines.join("\n");
+            const pageStr = sortedLines.join("\n");
+            if (!isLargeReport) {
+              fullText += `\n--- Trang ${p} ---\n` + pageStr;
+            } else {
+              // Với Báo cáo thường niên dài (100-200 trang): lấy trang bìa/thông tin chung (1..22) + lọc đúng các trang BCTC (CĐKT, KQKD, LCTT)
+              if (p <= 22) headerText += `\n--- Trang ${p} ---\n` + pageStr;
+              const normP = pageStr.toLowerCase();
+              const isBctcPage = (
+                (normP.includes("bảng cân đối kế toán") || normP.includes("kết quả hoạt động kinh doanh") || normP.includes("lưu chuyển tiền tệ")) &&
+                (normP.includes("mã số") || normP.includes("thuyết minh") || normP.includes("tài sản ngắn hạn") || normP.includes("doanh thu thuần"))
+              );
+              if (isBctcPage) bctcText += `\n--- Trang ${p} ---\n` + pageStr;
+            }
+          }
+          if (isLargeReport) {
+            fullText = (bctcText ? bctcText + "\n\n=== THÔNG TIN CHUNG ===\n" + headerText.slice(0, 8000) : headerText);
           }
           const isScanned = rawCharCount < 150;
           const pageImages = [];
@@ -3922,17 +4032,18 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
       }
 
       function detectCompanyNameFromDocs(parsedDocs, files) {
-        const legalRxList = [
-          /(?:CÔNG\s+TY\s+CỔ\s+PHẦN|CÔNG\s+TY\s+TNHH|CÔNG\s+TY\s+TRÁCH\s+NHIỆM\s+HỮU\s+HẠN|TỔNG\s+CÔNG\s+TY|NGÂN\s+HÀNG\s+(?:TMCP|THƯƠNG\s+MẠI\s+CỔ\s+PHẦN)|TẬP\s+ĐOÀN|DOANH\s+NGHIỆP\s+TƯ\s+NHÂN|CTCP)\s+[^\n\r,;]{3,90}/i,
-          /(?:CONG\s+TY\s+CO\s+PHAN|CONG\s+TY\s+TNHH|TONG\s+CONG\s+TY|NGAN\s+HANG\s+TMCP|TAP\s+DOAN)\s+[^\n\r,;]{3,90}/i
-        ];
+        // Ưu tiên 1: Tên pháp nhân đầy đủ (Công ty Cổ phần / Công ty TNHH / Tổng Công ty / Ngân hàng)
+        const strictLegalRx = /(?:CÔNG\s+TY\s+CỔ\s+PHẦN|CÔNG\s+TY\s+TNHH|CÔNG\s+TY\s+TRÁCH\s+NHIỆM\s+HỮU\s+HẠN|TỔNG\s+CÔNG\s+TY|NGÂN\s+HÀNG\s+(?:TMCP|THƯƠNG\s+MẠI\s+CỔ\s+PHẦN))\s+[^\n\r,;()]{3,85}/i;
+        const asciiLegalRx = /(?:CONG\s+TY\s+CO\s+PHAN|CONG\s+TY\s+TNHH|TONG\s+CONG\s+TY|NGAN\s+HANG\s+TMCP)\s+[^\n\r,;()]{3,85}/i;
+        const legalRxList = [strictLegalRx, asciiLegalRx];
+        // Quét rộng hơn (12.000 ký tự đầu) để bắt đúng tên pháp nhân đầy đủ trong Báo cáo thường niên
         const labelRx = /(?:đơn vị báo cáo|don vi bao cao|tên doanh nghiệp|ten doanh nghiep|tên công ty|ten cong ty|đơn vị|don vi)\s*[:\-]\s*([^\n\r,;]{4,90})/i;
 
         for (const doc of parsedDocs) {
-          const head = (doc.text || "").slice(0, 3500);
+          const head = (doc.text || "").slice(0, 12000);
           // 1. Scan line by line for legal entity name
           const lines = head.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-          for (const line of lines.slice(0, 45)) {
+          for (const line of lines.slice(0, 180)) {
             for (const rx of legalRxList) {
               const m = line.match(rx);
               if (m) {
@@ -3942,7 +4053,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
             }
           }
           // 2. Scan for explicit label (Đơn vị báo cáo / Tên doanh nghiệp)
-          for (const line of lines.slice(0, 45)) {
+          for (const line of lines.slice(0, 180)) {
             const m = line.match(labelRx);
             if (m && m[1]) {
               const cleaned = cleanCompanyName(m[1]);
@@ -4042,6 +4153,8 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         lines.forEach(line => {
           const norm = normalizeVn(line);
           if (!norm || norm.length < 4) return;
+          // Bỏ qua các dòng chỉ số tỷ lệ / vòng quay / ngày tháng để tránh bóc nhầm (VD: Vòng quay hàng tồn kho 5,66 hay Hệ số nợ/VCSH 18,4% hay 31/12/2024)
+          if (/(?:vong quay|he so|ty le|ty suat|chi so|%|tai ngay|ngay 31)/.test(norm)) return;
           for (const p of VAS_PATTERNS) {
             if (p.rx.test(norm)) {
               const nums = extractNumbersFromLine(line);
@@ -4138,7 +4251,7 @@ Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
                   const s = String(rows[r][0] || "").trim().toLowerCase(), k = String(rows[r][1] || "").trim();
                   if (nd[s] && nd[s][k]) nd[s][k] = periods.map((_, i) => Number(rows[r][3 + i]) || 0);
                 }
-                state.data = nd; state.sampleKey = "custom";
+                state.rawData = deepClone(nd); applyAutoModeToData(); state.sampleKey = "custom";
                 recomputeAll();
                 stEl.textContent = `✅ Đã nạp chuẩn ${periods.length} kỳ từ "${files[0].name}"!`;
                 showStatus(`✅ Đã nạp tự động ${periods.length} kỳ từ file Excel mẫu — toàn bộ biểu đồ & báo cáo đã cập nhật!`);
@@ -4204,7 +4317,8 @@ Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
             finalData.budgetLatest = state.data.budgetLatest;
           }
 
-          state.data = finalData;
+          state.rawData = deepClone(finalData);
+          applyAutoModeToData();
           state.sampleKey = "custom";
           recomputeAll();
 
