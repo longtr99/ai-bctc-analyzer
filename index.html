@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v6.3</title>
+  <title>AI Phân Tích BCTC Cá Nhân v6.4</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -794,7 +794,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.3</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.4</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -839,6 +839,9 @@
         </button>
         <button class="nav-item" data-tab="tab-learning" onclick="window.switchTab('tab-learning')">
           <span class="nav-icon">📚</span> 5 Module Nền tảng
+        </button>
+        <button class="nav-item" data-tab="tab-settings" onclick="window.switchTab('tab-settings')">
+          <span class="nav-icon">⚙️</span> Cấu hình API Cá nhân
         </button>
       </nav>
 
@@ -1183,7 +1186,7 @@
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <span id="docActiveAiBadge" class="badge">AI: gemini / gemini-3.8-flash</span>
-                <button class="btn btn-sm" onclick="window.switchTab('tab-ai')">⚙️ Đổi Nền tảng / API Key</button>
+                <button class="btn btn-sm" onclick="window.switchTab('tab-settings')">⚙️ Đổi Nền tảng / API Key</button>
               </div>
             </div>
 
@@ -1369,40 +1372,14 @@
           <div class="card">
             <div class="card-header">
               <div>
-                <h3>⚙️ Cấu Hình API Cá Nhân (11 Nền Tảng AI Phổ Biến · Lưu Cục Bộ)</h3>
-                <span class="muted">API Key chỉ lưu trong <code>localStorage</code> trên máy bạn, tự động đồng bộ cho Chat File BCTC &amp; Đọc PDF ảnh scan.</span>
+                <h3>⚡ Gọi AI Phân Tích Chuyên Sâu Trực Tiếp</h3>
+                <span class="muted">Dùng nền tảng &amp; API Key bạn đã lưu tại mục <strong>⚙️ Cấu hình API Cá nhân</strong> ở cột trái</span>
               </div>
-              <span class="badge badge-good">11 Providers · Model 2026</span>
-            </div>
-
-            <div class="form-grid-2">
-              <div class="input-box">
-                <label for="aiProviderSelect">Nhà cung cấp AI (11 nền tảng phổ biến)</label>
-                <select id="aiProviderSelect" onchange="window.onAiProviderChange()"></select>
-              </div>
-              <div class="input-box">
-                <label for="aiModelSelect">Tên Model (tự động cập nhật theo Nhà cung cấp)</label>
-                <select id="aiModelSelect" onchange="window.onAiModelChange()"></select>
-                <input type="text" id="aiCustomModelInput" class="hidden" placeholder="Nhập chính xác mã model (VD: gemini-3.8-flash)..." style="margin-top:6px;" />
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <span id="aiTabActiveBadge" class="badge">AI: gemini / gemini-3.8-flash</span>
+                <button class="btn btn-sm" onclick="window.switchTab('tab-settings')">⚙️ Cấu hình API</button>
               </div>
             </div>
-
-            <div id="aiCustomUrlBox" class="input-box hidden" style="margin-top:10px;">
-              <label for="aiCustomBaseUrl">Endpoint URL (Chuẩn OpenAI-compatible, VD: http://localhost:11434/v1/chat/completions)</label>
-              <input type="text" id="aiCustomBaseUrl" placeholder="https://api.example.com/v1/chat/completions" />
-            </div>
-
-            <div class="input-box" style="margin-top:10px;">
-              <label for="aiApiKeyInput">API Key cá nhân của bạn</label>
-              <input type="password" id="aiApiKeyInput" placeholder="Dán API Key..." />
-              <span class="muted" id="aiProviderHint" style="font-size:11.5px;margin-top:2px;">Tạo key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--primary);font-weight:600;">aistudio.google.com/apikey</a></span>
-            </div>
-
-            <div class="action-row" style="padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border);">
-              <button class="btn" style="background:#0f172a;color:#fff;border-color:#0f172a;" onclick="window.saveAiConfig(true)">💾 Lưu Cấu Hình</button>
-              <span id="aiConfigSaveStatus" class="inline-status"></span>
-            </div>
-
             <div class="form-grid-2">
               <div class="input-box">
                 <label for="aiTaskSelect">Chủ đề phân tích nhanh</label>
@@ -1604,6 +1581,47 @@
                 </div>
               </div>
               <div id="mod5SmartQuestions"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 8: CẤU HÌNH API CÁ NHÂN -->
+        <section id="tab-settings" class="tab-panel">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>⚙️ Cấu Hình API Cá Nhân (11 Nền Tảng AI Phổ Biến · Lưu Cục Bộ)</h3>
+                <span class="muted">API Key chỉ lưu trong <code>localStorage</code> trên máy của bạn, không gửi đi bất kỳ server trung gian nào ngoài nhà cung cấp AI bạn chọn. Tự động áp dụng cho Đọc PDF ảnh scan, Chat File BCTC và Báo cáo AI.</span>
+              </div>
+              <span class="badge badge-good">11 Providers · Model 2026</span>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="input-box">
+                <label for="aiProviderSelect">Nhà cung cấp AI (11 nền tảng phổ biến)</label>
+                <select id="aiProviderSelect" onchange="window.onAiProviderChange()"></select>
+              </div>
+              <div class="input-box">
+                <label for="aiModelSelect">Tên Model (tự động cập nhật theo Nhà cung cấp)</label>
+                <select id="aiModelSelect" onchange="window.onAiModelChange()"></select>
+                <input type="text" id="aiCustomModelInput" class="hidden" placeholder="Nhập chính xác mã model (VD: gemini-3.6-flash)..." style="margin-top:6px;" />
+              </div>
+            </div>
+
+            <div id="aiCustomUrlBox" class="input-box hidden" style="margin-top:12px;">
+              <label for="aiCustomBaseUrl">Endpoint URL (Chuẩn OpenAI-compatible, VD: http://localhost:11434/v1/chat/completions)</label>
+              <input type="text" id="aiCustomBaseUrl" placeholder="https://api.example.com/v1/chat/completions" />
+            </div>
+
+            <div class="input-box" style="margin-top:12px;">
+              <label for="aiApiKeyInput">API Key cá nhân của bạn</label>
+              <input type="password" id="aiApiKeyInput" placeholder="Dán API Key..." />
+              <span class="muted" id="aiProviderHint" style="font-size:12px;margin-top:4px;">Tạo key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--primary);font-weight:600;">aistudio.google.com/apikey</a></span>
+            </div>
+
+            <div class="action-row" style="margin-top:16px;">
+              <button class="btn" style="background:#0f172a;color:#fff;border-color:#0f172a;padding:10px 18px;" onclick="window.saveAiConfig(true)">💾 Lưu Cấu Hình</button>
+              <span id="aiConfigSaveStatus" class="inline-status"></span>
             </div>
           </div>
         </section>
@@ -2273,7 +2291,8 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         "tab-valuation": ["So sánh ngành & Định giá", "Định giá DCF (bảng độ nhạy WACC & g) và bội số EV/EBITDA, P/E, P/B"],
         "tab-doc-ai": ["Đọc File BCTC (PDF/Word/Excel/Ảnh) & Chat AI", "Tải 1 hoặc nhiều file BCTC để tóm tắt, so sánh, tìm rủi ro và xuất mọi định dạng"],
         "tab-ai": ["Báo cáo Quản trị & Trợ lý AI", "Tạo báo cáo offline, copy prompt kèm số liệu hoặc gọi AI API trực tiếp"],
-        "tab-learning": ["5 Module Phân Tích BCTC Trực Quan Tự Động", "Tự động vẽ biểu đồ, chẩn đoán DuPont, kiểm chứng số liệu & sinh câu hỏi AI"]
+        "tab-learning": ["5 Module Phân Tích BCTC Trực Quan Tự Động", "Tự động vẽ biểu đồ, chẩn đoán DuPont, kiểm chứng số liệu & sinh câu hỏi AI"],
+        "tab-settings": ["Cấu Hình API Cá Nhân", "Chọn 1 trong 11 nền tảng AI phổ biến & lưu API Key cục bộ trên trình duyệt"]
       };
 
       const state = {
@@ -2372,10 +2391,11 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
 
       function updateDocAiBadge() {
         const cfg = getActiveAiConfig();
-        const badge = document.getElementById("docActiveAiBadge");
-        if (badge) {
-          badge.textContent = `AI: ${cfg.provider} / ${cfg.model}` + (cfg.apiKey ? " ✅" : " (chưa có key)");
-        }
+        const label = `AI: ${cfg.provider} / ${cfg.model}` + (cfg.apiKey ? " ✅" : " (chưa có key)");
+        const b1 = document.getElementById("docActiveAiBadge");
+        if (b1) b1.textContent = label;
+        const b2 = document.getElementById("aiTabActiveBadge");
+        if (b2) b2.textContent = label;
       }
 
       function loadAiCfg() {
