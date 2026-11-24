@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v6.9</title>
+  <title>AI Phân Tích BCTC Cá Nhân v7.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -865,7 +865,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.9</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.0</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -1836,6 +1836,15 @@
 
               <div id="fpaStressSummary" class="mini-stat-grid"></div>
 
+              <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin:14px 0 12px;padding:10px 14px;background:var(--surface-soft);border:1px solid var(--border);border-radius:11px;">
+                <span style="font-size:12.5px;font-weight:700;color:var(--text);">🔀 Chọn chế độ hiển thị Bảng Mô phỏng Kế hoạch:</span>
+                <div class="pill-group">
+                  <button class="pill-btn active" id="fpaProjBtn-both" onclick="window.switchFpaProjView('both')">👁️ Xem cả 2 (4 Quý + 3 Năm)</button>
+                  <button class="pill-btn" id="fpaProjBtn-4q" onclick="window.switchFpaProjView('4q')">📅 Kế hoạch cuốn 4 Quý (12T)</button>
+                  <button class="pill-btn" id="fpaProjBtn-3y" onclick="window.switchFpaProjView('3y')">📆 Dự phóng P&amp;L &amp; FCF 3 Năm</button>
+                </div>
+              </div>
+
               <div class="two-col-grid" style="margin-bottom:16px;">
                 <div>
                   <h4 style="font-size:13.5px;margin-bottom:8px;color:var(--text);">📈 So sánh 3 Kịch bản chuẩn &amp; Kịch bản Mô phỏng (Tỷ đồng)</h4>
@@ -1843,11 +1852,21 @@
                     <canvas id="fpaScenarioChart"></canvas>
                   </div>
                 </div>
-                <div>
+                <div id="fpaRollingBox">
                   <h4 style="font-size:13.5px;margin-bottom:8px;color:var(--text);">📅 Kế hoạch Cuốn Chi tiết 4 Quý Tới (Rolling Forecast 12 Tháng)</h4>
                   <div class="table-responsive">
                     <table id="fpaRollingTable" class="data-table"></table>
                   </div>
+                </div>
+              </div>
+
+              <div id="fpa3YearBox" style="margin-bottom:16px;">
+                <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+                  <h4 id="fpa3YearTitle" style="font-size:14px;color:var(--text);">📆 Bảng Dự phóng P&amp;L và Dòng tiền Tự do 3 năm (Tỷ đồng)</h4>
+                  <span class="badge badge-good" id="fpa3YearFcfBadge">Tổng FCF tích lũy 3 năm: — tỷ</span>
+                </div>
+                <div class="table-responsive">
+                  <table id="fpa3YearTable" class="data-table"></table>
                 </div>
               </div>
 
@@ -2649,6 +2668,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         analysisMode: "abs",
         activeLearningMod: 1,
         fpaStep: "all",
+        fpaProjView: "both",
         charts: { trend: null, waterfall: null, variance: null, forecast: null, peer: null, mod1: null, mod2Funnel: null, mod2Cash: null, mod3Radar: null, tpl2Cash: null, tpl5Fc: null, fpaVar: null, fpaDriver: null, fpaScen: null }
       };
 
@@ -3793,6 +3813,80 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         });
         document.getElementById("fpaRollingTable").innerHTML = rollHtml + `</tbody>`;
 
+        // 3-Year P&L & Free Cash Flow Projection Table (Actual latest + 3 Forecast Years)
+        const baseYearNum = parseInt(String(d.periods[idx]).replace(/\D/g, ""), 10);
+        const startY = (!isNaN(baseYearNum) && baseYearNum >= 2000 && baseYearNum <= 2100) ? baseYearNum : 2025;
+        const yLabels = [`Thực tế ${d.periods[idx]}`, `Dự báo ${startY + 1}F`, `Dự báo ${startY + 2}F`, `Dự báo ${startY + 3}F`];
+        const capexPct0 = rev0 > 0 ? capex0 / rev0 : 0.04;
+        const cash0 = d.bs.cash[idx] || 0;
+        // Annual compounding rate: if user sets shRev == 0, default gentle base growth 5% for Year 2 & 3 so 3Y projection is realistic; if user sets shRev != 0, compound shRev
+        const g1 = shRev / 100;
+        const gNext = shRev !== 0 ? (shRev / 100) : 0.05;
+        const cogsFactor = 1 + shCogs / 100;
+        const sgaPct0 = rev0 > 0 ? sga0 / rev0 : 0.15;
+        const sgaFactor = 1 + shSga / 100;
+
+        const yrs = [{
+          rev: rev0, cogs: cogs0, gp: rev0 - cogs0, gm: F.safeDiv(rev0 - cogs0, rev0),
+          sga: sga0, finNet: fin0 - int0 + oth0, ebt: drv.ebt[idx], tax: d.is.taxExpense[idx],
+          np: drv.netProfit[idx], capex: capex0, fcf: drv.fcf[idx], cash: cash0
+        }];
+
+        let prevRev = rev0, prevCash = cash0;
+        for (let yr = 1; yr <= 3; yr++) {
+          const gUse = (yr === 1) ? g1 : gNext;
+          const revY = prevRev * (1 + gUse);
+          const cogsY = revY * F.safeDiv(cogs0, rev0) * cogsFactor;
+          const gpY = revY - cogsY;
+          const gmY = F.safeDiv(gpY, revY);
+          const sgaY = (yr === 1) ? (sga0 * sgaFactor) : (revY * sgaPct0 * sgaFactor);
+          const ebitY = gpY - sgaY;
+          const intY = Math.max(0, int0 + debt0 * (shRate / 100));
+          const finNetY = fin0 - intY + oth0;
+          const ebtY = ebitY + finNetY;
+          const taxY = ebtY > 0 ? ebtY * taxRate : 0;
+          const npY = ebtY - taxY;
+          const depY = dep0 * Math.pow(1 + Math.max(0, gUse) * 0.5, yr);
+          const capexY = revY * capexPct0;
+          const fcfY = ebitY * (1 - taxRate) + depY - capexY;
+          // Cash ending assumes ~50% of positive FCF retained (rest for dividends/debt)
+          const cashY = Math.max(0, prevCash + (fcfY > 0 ? fcfY * 0.5 : fcfY));
+          yrs.push({ rev: revY, cogs: cogsY, gp: gpY, gm: gmY, sga: sgaY, finNet: finNetY, ebt: ebtY, tax: taxY, np: npY, capex: capexY, fcf: fcfY, cash: cashY });
+          prevRev = revY;
+          prevCash = cashY;
+        }
+
+        const totalFcf3Y = yrs[1].fcf + yrs[2].fcf + yrs[3].fcf;
+        const t3Title = document.getElementById("fpa3YearTitle");
+        if (t3Title) t3Title.textContent = `📆 Bảng Dự phóng P&L và Dòng tiền Tự do 3 năm (${startY + 1}–${startY + 3} · Tỷ đồng)`;
+        const t3Badge = document.getElementById("fpa3YearFcfBadge");
+        if (t3Badge) t3Badge.textContent = `Tổng FCF tích lũy 3 năm: ${F.fmtNum(totalFcf3Y, 1)} tỷ`;
+
+        const p3Rows = [
+          { lbl: "Doanh thu thuần", k: "rev", hl: true },
+          { lbl: "Giá vốn hàng bán", k: "cogs", hl: false },
+          { lbl: "Lợi nhuận gộp", k: "gp", hl: true },
+          { lbl: "Biên lợi nhuận gộp (%)", k: "gm", pct: true, hl: false },
+          { lbl: "Chi phí Bán hàng & QLDN (SG&A)", k: "sga", hl: false },
+          { lbl: "Thu nhập TC ròng & Khác", k: "finNet", hl: false },
+          { lbl: "Lợi nhuận trước thuế (LNTT)", k: "ebt", hl: true },
+          { lbl: "Thuế TNDN dự kiến", k: "tax", hl: false },
+          { lbl: "Lợi nhuận sau thuế (LNST)", k: "np", hl: true },
+          { lbl: "CAPEX đầu tư dự kiến", k: "capex", hl: false },
+          { lbl: "Dòng tiền tự do (FCF)", k: "fcf", hl: true },
+          { lbl: "Số dư Tiền & Tiền gửi cuối năm (ước tính)", k: "cash", hl: false }
+        ];
+        let t3Html = `<thead><tr><th>Chỉ tiêu Dự phóng (${d.unit})</th>${yLabels.map(l => `<th>${l}</th>`).join("")}</tr></thead><tbody>`;
+        p3Rows.forEach(pr => {
+          t3Html += `<tr class="${pr.hl ? "row-highlight" : ""}"><td>${pr.lbl}</td>${yrs.map(y => {
+            const val = y[pr.k];
+            if (pr.pct) return `<td>${F.fmtPct(val, 1)}</td>`;
+            return `<td class="${pr.k === "fcf" || pr.k === "np" ? (val >= 0 ? "num-pos" : "num-neg") : ""}">${F.fmtNum(val, 1)}</td>`;
+          }).join("")}</tr>`;
+        });
+        const t3El = document.getElementById("fpa3YearTable");
+        if (t3El) t3El.innerHTML = t3Html + `</tbody>`;
+
         // Dynamic CEO Recommendations
         const cogs5Impact = cogs0 * 0.05 * (1 - taxRate);
         const sga5Save = sga0 * 0.05 * (1 - taxRate);
@@ -3837,6 +3931,17 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           if (pane) pane.classList.toggle("active", step === "all" || step === String(i));
         }
         renderFpaModel();
+      };
+
+      window.switchFpaProjView = function (view) {
+        state.fpaProjView = view || "both";
+        ["both", "4q", "3y"].forEach(k => {
+          document.getElementById("fpaProjBtn-" + k)?.classList.toggle("active", k === state.fpaProjView);
+        });
+        const box4q = document.getElementById("fpaRollingBox");
+        const box3y = document.getElementById("fpa3YearBox");
+        if (box4q) box4q.classList.toggle("hidden", state.fpaProjView === "3y");
+        if (box3y) box3y.classList.toggle("hidden", state.fpaProjView === "4q");
       };
 
       window.applyFpaPreset = function (rev, cogs, sga, rate) {
