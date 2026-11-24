@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v6.6</title>
+  <title>AI Phân Tích BCTC Cá Nhân v6.7</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -811,7 +811,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.6</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.7</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -1134,11 +1134,11 @@
                   <input type="number" step="0.5" id="peerRoe" value="15" oninput="window.updateValuationAndPeer()" />
                 </div>
                 <div class="input-box">
-                  <label for="peerInvTurn">Vòng quay tồn kho ngành (x)</label>
+                  <label for="peerInvTurn">Vòng quay tồn kho ngành (vòng)</label>
                   <input type="number" step="0.2" id="peerInvTurn" value="5.5" oninput="window.updateValuationAndPeer()" />
                 </div>
                 <div class="input-box">
-                  <label for="peerDE">D/E ngành (x)</label>
+                  <label for="peerDE">D/E ngành (lần)</label>
                   <input type="number" step="0.1" id="peerDE" value="1.0" oninput="window.updateValuationAndPeer()" />
                 </div>
               </div>
@@ -1169,15 +1169,15 @@
                   <input type="number" step="0.5" id="valMarketPrice" value="25" oninput="window.updateValuationAndPeer()" />
                 </div>
                 <div class="input-box">
-                  <label for="valEvEbitda">EV/EBITDA ngành (x)</label>
+                  <label for="valEvEbitda">EV/EBITDA ngành (lần)</label>
                   <input type="number" step="0.5" id="valEvEbitda" value="8.5" oninput="window.updateValuationAndPeer()" />
                 </div>
                 <div class="input-box">
-                  <label for="valPe">P/E ngành (x)</label>
+                  <label for="valPe">P/E ngành (lần)</label>
                   <input type="number" step="0.5" id="valPe" value="12" oninput="window.updateValuationAndPeer()" />
                 </div>
                 <div class="input-box">
-                  <label for="valPb">P/B ngành (x)</label>
+                  <label for="valPb">P/B ngành (lần)</label>
                   <input type="number" step="0.1" id="valPb" value="1.8" oninput="window.updateValuationAndPeer()" />
                 </div>
               </div>
@@ -2051,14 +2051,14 @@
         if (rLast.currentRatio < 1.1) {
           alerts.push({
             level: "danger",
-            title: `Áp lực thanh khoản ngắn hạn (Current Ratio = ${fmtNum(rLast.currentRatio, 2)}x)`,
+            title: `Áp lực thanh khoản ngắn hạn (Current Ratio = ${fmtNum(rLast.currentRatio, 2)} lần)`,
             desc: `Tài sản ngắn hạn sát hoặc thấp hơn nợ ngắn hạn.`
           });
         }
         if (rLast.debtToEquity > 1.5) {
           alerts.push({
             level: "warn",
-            title: `Đòn bẩy nợ cao (D/E = ${fmtNum(rLast.debtToEquity, 2)}x)`,
+            title: `Đòn bẩy nợ cao (D/E = ${fmtNum(rLast.debtToEquity, 2)} lần)`,
             desc: `Tổng nợ phải trả (${fmtNum(derived.totalLiabilities[last])} tỷ) vượt xa vốn chủ sở hữu (${fmtNum(data.bs.equity[last])} tỷ).`
           });
         }
@@ -2134,9 +2134,9 @@ Kỳ phân tích: ${data.periods[last]} | ĐVT: ${data.unit}
 - Dòng tiền kinh doanh (OCF): ${fmtNum(data.cf.ocf[last])} tỷ | FCF: ${fmtNum(derived.fcf[last])} tỷ
 
 ## 2. CHỈ SỐ SỨC KHỎE TÀI CHÍNH
-- Current Ratio: ${fmtNum(r.currentRatio, 2)}x | Quick Ratio: ${fmtNum(r.quickRatio, 2)}x
-- D/E: ${fmtNum(r.debtToEquity, 2)}x | Nợ/Tổng TS: ${fmtPct(r.debtToAssets)}
-- ROA: ${fmtPct(r.roa)} | ROE: ${fmtPct(r.roe)} | Vòng quay TS: ${fmtNum(r.assetTurnover, 2)}x | DSO: ${fmtNum(r.dso, 0)} ngày
+- Current Ratio: ${fmtNum(r.currentRatio, 2)} lần | Quick Ratio: ${fmtNum(r.quickRatio, 2)} lần
+- D/E: ${fmtNum(r.debtToEquity, 2)} lần | Nợ/Tổng TS: ${fmtPct(r.debtToAssets)}
+- ROA: ${fmtPct(r.roa)} | ROE: ${fmtPct(r.roe)} | Vòng quay TS: ${fmtNum(r.assetTurnover, 2)} vòng | DSO: ${fmtNum(r.dso, 0)} ngày
 
 ## 3. BIẾN ĐỘNG & CẢNH BÁO RỦI RO
 ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.desc}`).join("\n")}
@@ -2604,7 +2604,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           { label: "EBITDA & Biên", val: `${F.fmtNum(drv.ebitda[idx])} tỷ`, sub: { text: `Biên EBITDA: ${F.fmtPct(r.ebitdaMargin)}`, cls: r.ebitdaMargin >= 0.15 ? "up" : "neutral" }, dot: r.ebitdaMargin >= 0.15 ? "good" : "warn" },
           { label: "Lợi nhuận sau thuế", val: `${F.fmtNum(drv.netProfit[idx])} tỷ`, sub: yoy(drv.netProfit), dot: drv.netProfit[idx] >= 0 ? "good" : "danger" },
           { label: "Dòng tiền KD (OCF)", val: `${F.fmtNum(d.cf.ocf[idx])} tỷ`, sub: { text: d.cf.ocf[idx] >= 0 ? "Dòng tiền dương" : "Cảnh báo dòng tiền âm", cls: d.cf.ocf[idx] >= 0 ? "up" : "down" }, dot: d.cf.ocf[idx] < 0 ? "danger" : "good" },
-          { label: "Tổng Tài sản & D/E", val: `${F.fmtNum(drv.totalAssets[idx])} tỷ`, sub: { text: `D/E: ${F.fmtNum(r.debtToEquity, 2)}x · CR: ${F.fmtNum(r.currentRatio, 2)}x`, cls: r.debtToEquity > 1.5 ? "down" : "neutral" }, dot: r.debtToEquity > 1.5 ? "warn" : "good" },
+          { label: "Tổng Tài sản & D/E", val: `${F.fmtNum(drv.totalAssets[idx])} tỷ`, sub: { text: `D/E: ${F.fmtNum(r.debtToEquity, 2)} lần · CR: ${F.fmtNum(r.currentRatio, 2)} lần`, cls: r.debtToEquity > 1.5 ? "down" : "neutral" }, dot: r.debtToEquity > 1.5 ? "warn" : "good" },
           { label: "Sinh lời (ROE / ROA)", val: F.fmtPct(r.roe), sub: { text: `ROA: ${F.fmtPct(r.roa)} · Biên gộp: ${F.fmtPct(r.grossMargin)}`, cls: r.roe >= 0.15 ? "up" : "neutral" }, dot: r.roe >= 0.15 ? "good" : "" }
         ];
 
@@ -2779,12 +2779,12 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         const d = state.data, ratios = state.derived.ratios, last = ratios[ratios.length - 1];
         const defs = [
           { section: "1. THANH TOÁN" },
-          { k: "currentRatio", l: "Current Ratio", f: v => F.fmtNum(v, 2) + "x", e: v => v >= 1.3 ? ["Tốt", "good"] : v >= 1 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
-          { k: "quickRatio", l: "Quick Ratio", f: v => F.fmtNum(v, 2) + "x", e: v => v >= 1 ? ["Tốt", "good"] : v >= 0.7 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
+          { k: "currentRatio", l: "Thanh toán ngắn hạn (Current Ratio)", f: v => F.fmtNum(v, 2) + " lần", e: v => v >= 1.3 ? ["Tốt", "good"] : v >= 1 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
+          { k: "quickRatio", l: "Thanh toán nhanh (Quick Ratio)", f: v => F.fmtNum(v, 2) + " lần", e: v => v >= 1 ? ["Tốt", "good"] : v >= 0.7 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
           { section: "2. ĐÒN BẨY" },
-          { k: "debtToEquity", l: "D/E (Tổng nợ / VCSH)", f: v => F.fmtNum(v, 2) + "x", e: v => v <= 1 ? ["An toàn", "good"] : v <= 1.5 ? ["Trung bình", "warn"] : ["Cao", "danger"] },
+          { k: "debtToEquity", l: "D/E (Tổng nợ / VCSH)", f: v => F.fmtNum(v, 2) + " lần", e: v => v <= 1 ? ["An toàn", "good"] : v <= 1.5 ? ["Trung bình", "warn"] : ["Cao", "danger"] },
           { k: "debtToAssets", l: "Nợ / Tổng Tài sản", f: v => F.fmtPct(v, 1), e: v => v <= 0.5 ? ["An toàn", "good"] : v <= 0.65 ? ["Theo dõi", "warn"] : ["Cao", "danger"] },
-          { k: "icr", l: "Khả năng trả lãi (ICR)", f: v => v > 50 ? ">50x" : F.fmtNum(v, 1) + "x", e: v => v >= 4 ? ["Tốt", "good"] : v >= 2 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
+          { k: "icr", l: "Khả năng trả lãi (ICR)", f: v => v > 50 ? ">50 lần" : F.fmtNum(v, 1) + " lần", e: v => v >= 4 ? ["Tốt", "good"] : v >= 2 ? ["Theo dõi", "warn"] : ["Rủi ro", "danger"] },
           { section: "3. SINH LỜI" },
           { k: "grossMargin", l: "Biên LN gộp", f: v => F.fmtPct(v, 1), e: v => v >= 0.25 ? ["Tốt", "good"] : v >= 0.15 ? ["TB", "warn"] : ["Mỏng", "danger"] },
           { k: "ebitdaMargin", l: "Biên EBITDA", f: v => F.fmtPct(v, 1), e: v => v >= 0.15 ? ["Tốt", "good"] : v >= 0.08 ? ["TB", "warn"] : ["Thấp", "danger"] },
@@ -2792,8 +2792,8 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           { k: "roa", l: "ROA", f: v => F.fmtPct(v, 1), e: v => v >= 0.07 ? ["Tốt", "good"] : v >= 0.03 ? ["TB", "warn"] : ["Thấp", "danger"] },
           { k: "roe", l: "ROE", f: v => F.fmtPct(v, 1), e: v => v >= 0.15 ? ["Tốt", "good"] : v >= 0.08 ? ["TB", "warn"] : ["Thấp", "danger"] },
           { section: "4. HIỆU QUẢ HOẠT ĐỘNG" },
-          { k: "assetTurnover", l: "Vòng quay tài sản", f: v => F.fmtNum(v, 2) + "x", e: v => v >= 0.8 ? ["Tốt", "good"] : ["Chậm", "warn"] },
-          { k: "inventoryTurnover", l: "Vòng quay tồn kho", f: v => F.fmtNum(v, 2) + "x", e: v => v >= 4 ? ["Nhanh", "good"] : v >= 2 ? ["TB", "warn"] : ["Chậm", "danger"] },
+          { k: "assetTurnover", l: "Vòng quay tài sản", f: v => F.fmtNum(v, 2) + " vòng", e: v => v >= 0.8 ? ["Tốt", "good"] : ["Chậm", "warn"] },
+          { k: "inventoryTurnover", l: "Vòng quay tồn kho", f: v => F.fmtNum(v, 2) + " vòng", e: v => v >= 4 ? ["Nhanh", "good"] : v >= 2 ? ["TB", "warn"] : ["Chậm", "danger"] },
           { k: "dso", l: "Số ngày thu tiền (DSO)", f: v => F.fmtNum(v, 0) + " ngày", e: v => v <= 60 ? ["Tốt", "good"] : v <= 90 ? ["Theo dõi", "warn"] : ["Chậm", "danger"] }
         ];
         let html = `<thead><tr><th>Chỉ số</th>${d.periods.map(p => `<th>${p}</th>`).join("")}<th>Đánh giá</th></tr></thead><tbody>`;
@@ -2889,9 +2889,9 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
 
         document.getElementById("valuationSummary").innerHTML = `
           <div class="val-box"><div class="val-box-label">Định giá DCF</div><div class="val-box-value">${dcf.valid ? F.fmtNum(dcf.pricePerShare, 1) + "k" : "Lỗi"}</div><div class="val-box-note">${dcf.valid ? up(dcf.pricePerShare) : dcf.error}</div></div>
-          <div class="val-box"><div class="val-box-label">EV/EBITDA (${evEb}x)</div><div class="val-box-value">${F.fmtNum(pEv, 1)}k</div><div class="val-box-note">${up(pEv)}</div></div>
-          <div class="val-box"><div class="val-box-label">P/E (${pe}x)</div><div class="val-box-value">${F.fmtNum(pPe, 1)}k</div><div class="val-box-note">${up(pPe)}</div></div>
-          <div class="val-box"><div class="val-box-label">P/B (${pb}x)</div><div class="val-box-value">${F.fmtNum(pPb, 1)}k</div><div class="val-box-note">${up(pPb)}</div></div>
+          <div class="val-box"><div class="val-box-label">EV/EBITDA (${evEb} lần)</div><div class="val-box-value">${F.fmtNum(pEv, 1)}k</div><div class="val-box-note">${up(pEv)}</div></div>
+          <div class="val-box"><div class="val-box-label">P/E (${pe} lần)</div><div class="val-box-value">${F.fmtNum(pPe, 1)}k</div><div class="val-box-note">${up(pPe)}</div></div>
+          <div class="val-box"><div class="val-box-label">P/B (${pb} lần)</div><div class="val-box-value">${F.fmtNum(pPb, 1)}k</div><div class="val-box-note">${up(pPb)}</div></div>
         `;
 
         const wSteps = [wacc - 2, wacc - 1, wacc, wacc + 1, wacc + 2];
@@ -2962,7 +2962,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           <div class="meter-card">
             <div class="meter-head"><span>Vốn lưu động ròng (NWC = TSNH − Nợ NH)</span><span style="color:${nwc >= 0 ? "#059669" : "#dc2626"}">${nwc >= 0 ? "+" : ""}${F.fmtNum(nwc)} tỷ</span></div>
             <div class="meter-track"><div class="meter-fill" style="width:${Math.min(100, Math.max(8, r.currentRatio * 45))}%;background:${r.currentRatio >= 1.2 ? "#2563eb" : "#dc2626"};"></div></div>
-            <div class="meter-note">Current Ratio = <strong>${F.fmtNum(r.currentRatio, 2)}x</strong> · Quick Ratio = <strong>${F.fmtNum(r.quickRatio, 2)}x</strong>.</div>
+            <div class="meter-note">Current Ratio = <strong>${F.fmtNum(r.currentRatio, 2)} lần</strong> · Quick Ratio = <strong>${F.fmtNum(r.quickRatio, 2)} lần</strong>.</div>
           </div>
           <div class="meter-card">
             <div class="meter-head"><span>Tài sản đang bị giam (Phải thu + Tồn kho / Tổng TS)</span><span>${F.fmtNum(lockedPct, 1)}%</span></div>
@@ -3080,9 +3080,9 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         document.getElementById("mod3DupontFlow").innerHTML = `
           <div class="dupont-node"><div class="dupont-node-label">Biên LN ròng</div><div class="dupont-node-val">${F.fmtPct(r.netMargin)}</div></div>
           <div class="dupont-op">×</div>
-          <div class="dupont-node"><div class="dupont-node-label">Vòng quay TS</div><div class="dupont-node-val">${F.fmtNum(r.assetTurnover, 2)}x</div></div>
+          <div class="dupont-node"><div class="dupont-node-label">Vòng quay TS</div><div class="dupont-node-val">${F.fmtNum(r.assetTurnover, 2)} vòng</div></div>
           <div class="dupont-op">×</div>
-          <div class="dupont-node"><div class="dupont-node-label">Đòn bẩy (TS/VCSH)</div><div class="dupont-node-val">${F.fmtNum(em, 2)}x</div></div>
+          <div class="dupont-node"><div class="dupont-node-label">Đòn bẩy (TS/VCSH)</div><div class="dupont-node-val">${F.fmtNum(em, 2)} lần</div></div>
           <div class="dupont-op">=</div>
           <div class="dupont-node result"><div class="dupont-node-label">ROE</div><div class="dupont-node-val">${F.fmtPct(r.roe)}</div></div>
         `;
@@ -3116,7 +3116,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           </div>
           <div class="step-audit-card ${step4Ok}">
             <div class="step-audit-head"><span>Bước 4: An toàn cấu trúc</span><span class="badge badge-${step4Ok}">${step4Ok === "good" ? "An toàn" : "Theo dõi"}</span></div>
-            <div class="muted">Current Ratio <strong>${F.fmtNum(r.currentRatio, 2)}x</strong> · D/E <strong>${F.fmtNum(r.debtToEquity, 2)}x</strong> · DSO <strong>${F.fmtNum(r.dso, 0)} ngày</strong>.</div>
+            <div class="muted">Current Ratio <strong>${F.fmtNum(r.currentRatio, 2)} lần</strong> · D/E <strong>${F.fmtNum(r.debtToEquity, 2)} lần</strong> · DSO <strong>${F.fmtNum(r.dso, 0)} ngày</strong>.</div>
           </div>
         `;
 
@@ -3160,7 +3160,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
 
         const smartQs = [
           `Dựa trên số liệu kỳ ${pLabel} của ${d.companyName} (Doanh thu ${F.fmtNum(rev)} tỷ, LNST ${F.fmtNum(np)} tỷ, OCF ${F.fmtNum(ocf)} tỷ), hãy chỉ ra nguyên nhân gốc rễ lớn nhất làm thay đổi lợi nhuận và dòng tiền.`,
-          `Phân tích cây DuPont ROE (${F.fmtPct(r.roe)} = Biên ròng ${F.fmtPct(r.netMargin)} × VQ Tài sản ${F.fmtNum(r.assetTurnover, 2)}x × Đòn bẩy ${F.fmtNum(em, 2)}x) và đề xuất 3 hành động cụ thể tăng ROE an toàn trong 12 tháng tới.`,
+          `Phân tích cây DuPont ROE (${F.fmtPct(r.roe)} = Biên ròng ${F.fmtPct(r.netMargin)} × VQ Tài sản ${F.fmtNum(r.assetTurnover, 2)} vòng × Đòn bẩy ${F.fmtNum(em, 2)} lần) và đề xuất 3 hành động cụ thể tăng ROE an toàn trong 12 tháng tới.`,
           state.alerts[0] ? `Hệ thống đang cảnh báo: "${state.alerts[0].title}". Hãy đóng vai CFO lập kế hoạch xử lý trong 90 ngày kèm KPI đo lường.` : `Lập kịch bản ứng phó nếu doanh thu năm tới giảm 15% và lãi suất vay tăng 2%.`
         ];
         window._mod5SmartQs = smartQs;
@@ -3433,7 +3433,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           <div class="mini-stat"><div class="mini-stat-lbl">2. Lợi nhuận ròng</div><div class="mini-stat-val" style="color:${np >= 0 ? "#059669" : "#dc2626"}">${F.fmtNum(np)} tỷ</div><div class="mini-stat-sub">Biên ròng: ${F.fmtPct(r.netMargin)} ${npYoy !== null ? "· " + (npYoy >= 0 ? "+" : "") + F.fmtPct(npYoy) : ""}</div></div>
           <div class="mini-stat"><div class="mini-stat-lbl">3. Tổng tài sản</div><div class="mini-stat-val">${F.fmtNum(ta)} tỷ</div><div class="mini-stat-sub">TSNH: ${F.fmtNum(drv.currentAssets[idx])} tỷ</div></div>
           <div class="mini-stat"><div class="mini-stat-lbl">4. Nợ phải trả</div><div class="mini-stat-val">${F.fmtNum(tl)} tỷ</div><div class="mini-stat-sub">Chiếm ${F.fmtPct(r.debtToAssets)} Tổng TS</div></div>
-          <div class="mini-stat"><div class="mini-stat-lbl">5. Vốn chủ sở hữu</div><div class="mini-stat-val">${F.fmtNum(eq)} tỷ</div><div class="mini-stat-sub">D/E = ${F.fmtNum(r.debtToEquity, 2)}x · ROE = ${F.fmtPct(r.roe)}</div></div>
+          <div class="mini-stat"><div class="mini-stat-lbl">5. Vốn chủ sở hữu</div><div class="mini-stat-val">${F.fmtNum(eq)} tỷ</div><div class="mini-stat-sub">D/E = ${F.fmtNum(r.debtToEquity, 2)} lần · ROE = ${F.fmtPct(r.roe)}</div></div>
           <div class="mini-stat"><div class="mini-stat-lbl">6. Dòng tiền HĐ (OCF)</div><div class="mini-stat-val" style="color:${ocf >= 0 ? "#059669" : "#dc2626"}">${ocf >= 0 ? "+" : ""}${F.fmtNum(ocf)} tỷ</div><div class="mini-stat-sub">${ocf >= 0 ? "Tiền kinh doanh dương" : "Cảnh báo dòng tiền âm"}</div></div>
         `;
         document.getElementById("autoTpl1Risks").innerHTML = state.alerts.slice(0, 3).map((a, i) => `
