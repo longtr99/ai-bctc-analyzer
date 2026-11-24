@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v2.0</title>
+  <title>AI Phân Tích BCTC Cá Nhân v4.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
   <style>
     :root {
       --bg: #f1f5f9;
@@ -574,6 +576,147 @@
       body { background: #fff; }
       .card { box-shadow: none; break-inside: avoid; }
     }
+
+    /* Doc Reader & Chat AI (v3.0) */
+    .dropzone {
+      border: 2px dashed #93c5fd;
+      background: #eff6ff;
+      border-radius: 12px;
+      padding: 22px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: #dbeafe;
+    }
+    .dropzone-title { font-size: 14.5px; font-weight: 700; color: #1e3a8a; margin-bottom: 4px; }
+    .dropzone-sub { font-size: 12px; color: var(--text-soft); }
+    .file-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .file-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fff; border: 1px solid var(--border); border-radius: 9px;
+      padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--text);
+      box-shadow: var(--shadow-sm);
+    }
+    .file-chip img { width: 24px; height: 24px; object-fit: cover; border-radius: 4px; }
+    .file-chip .chip-remove {
+      border: none; background: transparent; color: var(--danger);
+      font-weight: 800; cursor: pointer; font-size: 13px; padding: 0 2px;
+    }
+    .chat-box {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; min-height: 220px; max-height: 460px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;
+    }
+    .chat-msg {
+      padding: 12px 14px; border-radius: 11px; max-width: 92%; font-size: 13.5px; line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .chat-msg.user {
+      align-self: flex-end; background: var(--primary); color: #fff;
+      border-bottom-right-radius: 3px;
+    }
+    .chat-msg.ai {
+      align-self: flex-start; background: #fff; color: var(--text);
+      border: 1px solid var(--border); border-bottom-left-radius: 3px;
+      box-shadow: var(--shadow-sm);
+    }
+    .chat-input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .chat-input-row textarea {
+      flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px;
+      font-family: inherit; font-size: 13.5px; resize: vertical; min-height: 48px;
+    }
+    .chat-input-row textarea:focus { border-color: var(--primary); outline: 2px solid rgba(37,99,235,0.15); }
+    .verify-bar {
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+      padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-radius: 10px; margin-top: 12px; font-size: 12.5px; color: #166534; font-weight: 600;
+    }
+    .verify-bar label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .export-bar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+    }
+    .tpl-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .tpl-pill {
+      padding: 5px 10px; border-radius: 99px; border: 1px solid #bfdbfe;
+      background: #eff6ff; color: #1e40af; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .tpl-pill:hover { background: #dbeafe; }
+
+    /* Interactive 5 Modules (v4.0) */
+    .mod-nav {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px;
+    }
+    .mod-tab-btn {
+      flex: 1; min-width: 170px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; text-align: left; transition: all 0.15s;
+      box-shadow: var(--shadow-sm);
+    }
+    .mod-tab-btn:hover { border-color: #93c5fd; transform: translateY(-1px); }
+    .mod-tab-btn.active {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #fff; border-color: var(--primary);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+    }
+    .mod-num {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: #eff6ff; color: var(--primary);
+      font-weight: 800; font-size: 13px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .mod-tab-btn.active .mod-num { background: rgba(255,255,255,0.2); color: #fff; }
+    .mod-tab-title { font-size: 12.5px; font-weight: 700; line-height: 1.25; }
+    .mod-tab-sub { font-size: 11px; opacity: 0.78; margin-top: 2px; }
+
+    .mod-pane { display: none; animation: fadeIn 0.2s ease; }
+    .mod-pane.active { display: block; }
+
+    .meter-card {
+      background: var(--surface-soft); border: 1px solid var(--border);
+      border-radius: 11px; padding: 14px; margin-bottom: 12px;
+    }
+    .meter-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+    .meter-track { height: 10px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin-bottom: 6px; }
+    .meter-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+    .meter-note { font-size: 12px; color: var(--text-soft); }
+
+    .dupont-flow {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;
+      padding: 16px; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px;
+      margin-bottom: 14px;
+    }
+    .dupont-node {
+      background: #fff; border: 1px solid #cbd5e1; border-radius: 10px;
+      padding: 12px 16px; text-align: center; min-width: 135px; box-shadow: var(--shadow-sm);
+    }
+    .dupont-node.result {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff; border-color: var(--primary);
+    }
+    .dupont-node-label { font-size: 11px; font-weight: 700; text-transform: uppercase; opacity: 0.78; }
+    .dupont-node-val { font-size: 20px; font-weight: 800; margin-top: 3px; }
+    .dupont-op { font-size: 20px; font-weight: 800; color: var(--muted); }
+
+    .step-audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 16px; }
+    .step-audit-card {
+      background: var(--surface-soft); border: 1px solid var(--border); border-radius: 12px;
+      padding: 15px; border-top: 4px solid var(--primary);
+    }
+    .step-audit-card.good { border-top-color: var(--good); background: #f0fdf4; }
+    .step-audit-card.warn { border-top-color: var(--warn); background: #fffbeb; }
+    .step-audit-card.danger { border-top-color: var(--danger); background: #fef2f2; }
+    .step-audit-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-weight: 700; font-size: 13px; }
+
+    .smart-q-item {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+      padding: 12px 14px; border: 1px solid #bfdbfe; background: #eff6ff; border-radius: 10px; margin-bottom: 10px;
+    }
+    .smart-q-text { font-size: 13px; font-weight: 600; color: #1e3a8a; flex: 1; min-width: 220px; }
   </style>
 </head>
 <body>
@@ -583,7 +726,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v2.0</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v4.0</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -612,6 +755,9 @@
         </button>
         <button class="nav-item" data-tab="tab-valuation" onclick="window.switchTab('tab-valuation')">
           <span class="nav-icon">⚖️</span> So sánh ngành &amp; Định giá
+        </button>
+        <button class="nav-item" data-tab="tab-doc-ai" onclick="window.switchTab('tab-doc-ai')">
+          <span class="nav-icon">📂</span> Đọc File BCTC &amp; Chat AI
         </button>
         <button class="nav-item" data-tab="tab-ai" onclick="window.switchTab('tab-ai')">
           <span class="nav-icon">🤖</span> Báo cáo &amp; Trợ lý AI
@@ -930,6 +1076,98 @@
           </div>
         </section>
 
+        <!-- TAB NEW: ĐỌC FILE BCTC (PDF/WORD/EXCEL/ẢNH) & CHAT AI -->
+        <section id="tab-doc-ai" class="tab-panel">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>📂 Tải lên Báo Cáo Tài Chính (Hỗ trợ nhiều file cùng lúc để so sánh)</h3>
+                <span class="muted">Đọc trực tiếp trên trình duyệt: PDF (.pdf), Word (.docx), Excel (.xlsx/.csv) &amp; Ảnh chụp bảng biểu (.png/.jpg)</span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="window.loadDemoQ1Files()">⚡ Nạp ví dụ Q1/2026 (50 tỷ/năm)</button>
+                <button class="btn btn-sm" onclick="window.clearUploadedDocs()">🗑️ Xóa tất cả file</button>
+              </div>
+            </div>
+
+            <div id="docDropzone" class="dropzone" onclick="document.getElementById('multiDocInput').click()" ondragover="window.onDocDragOver(event)" ondragleave="window.onDocDragLeave(event)" ondrop="window.onDocDrop(event)">
+              <div class="dropzone-title">📎 Bấm chọn file hoặc Kéo-Thả nhiều file BCTC vào đây</div>
+              <div class="dropzone-sub">✅ PDF báo cáo tài chính · ✅ File Word (.docx) · ✅ Ảnh chụp bảng biểu (.jpg/.png) · ✅ File Excel (.xlsx/.csv)</div>
+              <input type="file" id="multiDocInput" multiple accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg,.webp" onchange="window.handleMultiDocUpload(event)" hidden />
+            </div>
+
+            <div id="docParseStatus" class="inline-status" style="margin-top:8px;"></div>
+            <div id="uploadedFileChips" class="file-chips"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>💬 Khung Chat Phân Tích &amp; So Sánh Nhiều Báo Cáo</h3>
+                <span class="muted">Chọn nhanh 1 trong 5 mẫu câu hỏi hoặc tự nhập câu hỏi của bạn bên dưới</span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <select id="docAiProvider" onchange="window.syncDocAiKey(true)" style="padding:6px 9px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;">
+                  <option value="gemini">Gemini (Hỗ trợ PDF/Word/Excel + Ảnh)</option>
+                  <option value="openai">OpenAI GPT-4o-mini (Hỗ trợ + Ảnh)</option>
+                </select>
+                <input type="password" id="docAiKey" placeholder="API Key (tùy chọn)..." onchange="window.syncDocAiKey(true)" style="padding:6px 10px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;width:185px;" />
+              </div>
+            </div>
+
+            <div class="tpl-pills">
+              <button class="tpl-pill" onclick="window.applyDocTemplate(0)">1. Tóm tắt BCTC</button>
+              <button class="tpl-pill" onclick="window.applyDocTemplate(1)">2. Trích xuất Dòng tiền (3 cột)</button>
+              <button class="tpl-pill" onclick="window.applyDocTemplate(2)">3. Phân tích Dòng tiền trả lương/thuế</button>
+              <button class="tpl-pill" onclick="window.applyDocTemplate(3)">4. So sánh nhiều năm/quý</button>
+              <button class="tpl-pill" onclick="window.applyDocTemplate(4)">5. Dự báo Q2–Q4 &amp; Khuyến nghị</button>
+              <button class="tpl-pill" onclick="window.applyDocTemplate(5)">⚠️ 3 Rủi ro lớn nhất &amp; Giải pháp</button>
+            </div>
+
+            <div id="docChatBox" class="chat-box">
+              <div class="chat-msg ai">👋 Xin chào! Bạn có thể tải 1 hoặc nhiều file BCTC (PDF, Word, Excel, Ảnh) ở khung trên, sau đó chọn mẫu câu hỏi hoặc gõ yêu cầu vào ô bên dưới.
+• Nếu chưa có API Key: bấm <strong>"📋 Copy câu hỏi + nội dung file"</strong> để dán thẳng sang Claude / ChatGPT / Gemini miễn phí, hoặc bấm <strong>"⚡ Nạp ví dụ Q1/2026"</strong> ở trên để xem thử ngay!</div>
+            </div>
+
+            <div class="chat-input-row">
+              <textarea id="docChatInput" rows="2" placeholder="Nhập câu hỏi... Ví dụ: So sánh báo cáo 2024 và 2025, chỉ ra doanh thu tăng hay giảm, xu hướng lợi nhuận và điểm thay đổi lớn nhất..."></textarea>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <button class="btn btn-primary" id="docSendBtn" onclick="window.sendDocChat()">🚀 Hỏi AI</button>
+                <button class="btn btn-sm" onclick="window.copyDocPromptWithFiles()" title="Copy câu hỏi + toàn bộ nội dung file đã đọc để dán sang Claude/ChatGPT">📋 Copy kèm file</button>
+              </div>
+            </div>
+
+            <div class="verify-bar">
+              <span>🔍 Checklist Đánh giá &amp; Kiểm chứng kết quả:</span>
+              <label><input type="checkbox" id="chkVerify1" /> Kết quả có đúng với file không?</label>
+              <label><input type="checkbox" id="chkVerify2" /> Số liệu có hợp lý không?</label>
+              <label><input type="checkbox" id="chkVerify3" /> Đã kiểm tra đủ điều cần phân tích thêm?</label>
+            </div>
+
+            <div class="export-bar">
+              <span style="font-size:12.5px;font-weight:700;color:var(--text-soft);">⬇️ Xuất kết quả phân tích:</span>
+              <select id="docExportFormat" style="padding:7px 10px;border-radius:8px;border:1px solid #cbd5e1;font-size:12.5px;font-weight:600;">
+                <option value="docx">Word (.doc / mở bằng MS Word)</option>
+                <option value="xlsx">Excel (.xlsx — tự tách bảng nếu có)</option>
+                <option value="pdf">PDF (In / Lưu PDF chuẩn đẹp)</option>
+                <option value="md">Markdown (.md)</option>
+                <option value="txt">Văn bản thuần (.txt)</option>
+                <option value="html">Trang Web (.html)</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="window.exportDocChatResult()">📥 Tải xuống ngay</button>
+              <button class="btn btn-sm" onclick="window.copyLatestDocAnswer()">📋 Copy kết quả cuối</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>📌 5 Prompt Template Tư Vấn Tài Chính (Mẫu gốc Copy-Paste ngay)</h3>
+              <span class="muted">Luôn sẵn sàng bản mẫu sạch + nút Chèn vào khung chat</span>
+            </div>
+            <div id="docTemplatesGrid" class="prompt-list"></div>
+          </div>
+        </section>
+
         <!-- TAB 6: BÁO CÁO & TRỢ LÝ AI -->
         <section id="tab-ai" class="tab-panel">
           <div class="card">
@@ -999,9 +1237,175 @@
           </div>
         </section>
 
-        <!-- TAB 7: 5 MODULE NỀN TẢNG -->
+        <!-- TAB 7: 5 MODULE NỀN TẢNG TƯƠNG TÁC & TRỰC QUAN HÓA TỰ ĐỘNG -->
         <section id="tab-learning" class="tab-panel">
-          <div id="learningModulesGrid" class="modules-grid"></div>
+          <div class="card" style="padding:14px 18px;margin-bottom:16px;background:linear-gradient(135deg,#eff6ff 0%,#ffffff 100%);border-color:#bfdbfe;">
+            <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;">
+              <div>
+                <h3 style="font-size:15.5px;color:#1e3a8a;">⚡ 5 Module Phân Tích BCTC Trực Quan Tự Động (Chạy trực tiếp trên số liệu đang mở)</h3>
+                <p class="muted" id="modContextBanner">Tự động cập nhật biểu đồ, chẩn đoán và câu hỏi AI mỗi khi bạn đổi công ty, đổi kỳ hoặc nhập file Excel mới.</p>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="window.switchTab('tab-statements')">✏️ Sửa số liệu BCTC</button>
+            </div>
+          </div>
+
+          <!-- 5 Module Navigation -->
+          <div class="mod-nav">
+            <button class="mod-tab-btn active" id="modBtn-1" onclick="window.switchLearningModule(1)">
+              <span class="mod-num">1</span>
+              <div><div class="mod-tab-title">Cân đối Kế toán</div><div class="mod-tab-sub">Tài sản · Nợ · NWC</div></div>
+            </button>
+            <button class="mod-tab-btn" id="modBtn-2" onclick="window.switchLearningModule(2)">
+              <span class="mod-num">2</span>
+              <div><div class="mod-tab-title">KQKD &amp; Tiền thật</div><div class="mod-tab-sub">Phễu LN · LNST vs OCF</div></div>
+            </button>
+            <button class="mod-tab-btn" id="modBtn-3" onclick="window.switchLearningModule(3)">
+              <span class="mod-num">3</span>
+              <div><div class="mod-tab-title">Chỉ số &amp; DuPont</div><div class="mod-tab-sub">Radar 4 trụ · Cây ROE</div></div>
+            </button>
+            <button class="mod-tab-btn" id="modBtn-4" onclick="window.switchLearningModule(4)">
+              <span class="mod-num">4</span>
+              <div><div class="mod-tab-title">Thực hành 4 Bước</div><div class="mod-tab-sub">Chẩn đoán &amp; Hành động</div></div>
+            </button>
+            <button class="mod-tab-btn" id="modBtn-5" onclick="window.switchLearningModule(5)">
+              <span class="mod-num">5</span>
+              <div><div class="mod-tab-title">Kiểm chứng &amp; AI</div><div class="mod-tab-sub">Auto Audit · Hỏi tiếp</div></div>
+            </button>
+          </div>
+
+          <!-- MODULE 1: BẢNG CÂN ĐỐI KẾ TOÁN -->
+          <div id="modPane-1" class="mod-pane active">
+            <div class="two-col-grid">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3>Cấu trúc Tài sản vs Nguồn vốn (Sống bằng vốn tự có hay bằng nợ?)</h3>
+                    <span class="muted">So sánh tỷ trọng trực quan ở kỳ đang chọn</span>
+                  </div>
+                  <span class="badge">Module 1</span>
+                </div>
+                <div class="chart-wrap">
+                  <canvas id="mod1StructureChart"></canvas>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h3>Chẩn đoán tự động Cấu trúc Tài chính &amp; Vốn lưu động</h3>
+                </div>
+                <div id="mod1MetersContainer"></div>
+                <div id="mod1VerdictBox" class="alerts-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODULE 2: KQKD & LƯU CHUYỂN TIỀN TỆ -->
+          <div id="modPane-2" class="mod-pane">
+            <div class="two-col-grid">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3>Phễu Lợi nhuận (Khoản mục nào đang ăn vào lợi nhuận?)</h3>
+                    <span class="muted">Từ Doanh thu thuần đến Lợi nhuận sau thuế (tỷ đồng)</span>
+                  </div>
+                  <span class="badge">Module 2</span>
+                </div>
+                <div class="chart-wrap">
+                  <canvas id="mod2FunnelChart"></canvas>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3>Lợi nhuận trên giấy (LNST) vs Tiền thật về (OCF)</h3>
+                    <span class="muted">Đối chiếu chất lượng lợi nhuận qua các kỳ</span>
+                  </div>
+                  <span class="badge badge-warn">Cash Quality</span>
+                </div>
+                <div class="chart-wrap">
+                  <canvas id="mod2CashVsProfitChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h3>Nhận định tự động KQKD &amp; Dòng tiền</h3></div>
+              <div id="mod2VerdictBox" class="alerts-list"></div>
+            </div>
+          </div>
+
+          <!-- MODULE 3: HỆ THỐNG CHỈ SỐ & DUPONT -->
+          <div id="modPane-3" class="mod-pane">
+            <div class="two-col-grid">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3>Biểu đồ Radar 4 Trụ cột Sức khỏe Tài chính (Thang 100)</h3>
+                    <span class="muted">Thanh toán · An toàn nợ · Sinh lời · Hiệu quả vận hành</span>
+                  </div>
+                  <span class="badge">Module 3</span>
+                </div>
+                <div class="chart-wrap">
+                  <canvas id="mod3RadarChart"></canvas>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <h3>Bóc tách DuPont ROE tự động</h3>
+                    <span class="muted">Biết ngay ROE cao do bán hàng giỏi hay do vay nợ nhiều</span>
+                  </div>
+                </div>
+                <div id="mod3DupontFlow" class="dupont-flow"></div>
+                <div id="mod3DupontVerdict" class="alerts-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODULE 4: THỰC HÀNH PHÂN TÍCH 4 BƯỚC TỰ ĐỘNG -->
+          <div id="modPane-4" class="mod-pane">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Quy trình 4 Bước Phân tích BCTC thực tế (Chạy tự động)</h3>
+                  <span class="muted">Hệ thống tự chấm từng bước trên bộ số liệu hiện tại</span>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-sm" onclick="window.switchTab('tab-valuation')">⚖️ Xem Định giá</button>
+                  <button class="btn btn-primary btn-sm" onclick="window.switchTab('tab-ai')">📝 Xuất Báo cáo BGĐ</button>
+                </div>
+              </div>
+              <div id="mod4StepsGrid" class="step-audit-grid"></div>
+              <h4 style="font-size:14px;margin:12px 0 8px;color:var(--text);">🎯 Đề xuất Hành động Cải thiện Tài chính (Sinh tự động theo dữ liệu DN)</h4>
+              <div id="mod4ActionsList" class="alerts-list"></div>
+            </div>
+          </div>
+
+          <!-- MODULE 5: ỨNG DỤNG AI & KIỂM CHỨNG TỰ ĐỘNG -->
+          <div id="modPane-5" class="mod-pane">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>🛡️ Bộ Kiểm chứng Tự động (Sanity Check) trước khi tin kết quả AI</h3>
+                  <span class="muted">Tự động kiểm tra 4 lỗi kế toán &amp; logic phổ biến trên dữ liệu hiện tại</span>
+                </div>
+                <span class="badge badge-good">Auto Audit</span>
+              </div>
+              <div id="mod5SanityGrid" class="step-audit-grid"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>💡 Câu hỏi thông minh nên hỏi AI tiếp theo (Tự động sinh từ dữ liệu DN)</h3>
+                  <span class="muted">Bấm "Gửi sang Chat AI" để phân tích sâu hơn ngay lập tức</span>
+                </div>
+              </div>
+              <div id="mod5SmartQuestions"></div>
+            </div>
+          </div>
         </section>
       </main>
     </div>
@@ -1504,8 +1908,9 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         "tab-ratios": ["Chỉ số Tài chính & Cảnh báo Rủi ro", "13 chỉ số cốt lõi và bộ quét Red Flags tự động"],
         "tab-forecast": ["Dự báo Tài chính 3 năm", "Mô phỏng Doanh thu, EBITDA, LNTT, Vốn lưu động và FCF"],
         "tab-valuation": ["So sánh ngành & Định giá", "Định giá DCF (bảng độ nhạy WACC & g) và bội số EV/EBITDA, P/E, P/B"],
+        "tab-doc-ai": ["Đọc File BCTC (PDF/Word/Excel/Ảnh) & Chat AI", "Tải 1 hoặc nhiều file BCTC để tóm tắt, so sánh, tìm rủi ro và xuất mọi định dạng"],
         "tab-ai": ["Báo cáo Quản trị & Trợ lý AI", "Tạo báo cáo offline, copy prompt kèm số liệu hoặc gọi AI API trực tiếp"],
-        "tab-learning": ["5 Module Nền tảng Đọc hiểu BCTC", "Tra cứu nhanh để kiểm chứng kết quả phân tích của AI"]
+        "tab-learning": ["5 Module Phân Tích BCTC Trực Quan Tự Động", "Tự động vẽ biểu đồ, chẩn đoán DuPont, kiểm chứng số liệu & sinh câu hỏi AI"]
       };
 
       const state = {
@@ -1515,7 +1920,8 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         alerts: [],
         statementType: "is",
         analysisMode: "abs",
-        charts: { trend: null, waterfall: null, variance: null, forecast: null, peer: null }
+        activeLearningMod: 1,
+        charts: { trend: null, waterfall: null, variance: null, forecast: null, peer: null, mod1: null, mod2Funnel: null, mod2Cash: null, mod3Radar: null }
       };
 
       const deepClone = o => JSON.parse(JSON.stringify(o));
@@ -1583,6 +1989,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         updateForecast();
         updateValuationAndPeer();
         renderPromptLibrary();
+        renderLearning();
       }
 
       function renderDashboard() {
@@ -1933,15 +2340,276 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
       }
 
       function renderLearning() {
-        document.getElementById("learningModulesGrid").innerHTML = window.LEARNING_MODULES.map(m => `
-          <div class="module-card">
-            <div class="module-tag">${m.tag}</div>
-            <h3>${m.title}</h3>
-            <p class="muted">${m.desc}</p>
-            <ul>${m.bullets.map(b => `<li>${b}</li>`).join("")}</ul>
+        if (!state.data || !state.derived) return;
+        const d = state.data, drv = state.derived;
+        const idx = Number(document.getElementById("dashboardPeriodSelect")?.value || (d.periods.length - 1));
+        const pLabel = d.periods[idx];
+        const r = drv.ratios[idx];
+
+        const banner = document.getElementById("modContextBanner");
+        if (banner) {
+          banner.textContent = `Đang chạy trực quan tự động cho: ${d.companyName} · Kỳ ${pLabel} (ĐVT: ${d.unit})`;
+        }
+
+        // ---- MODULE 1: CÂN ĐỐI KẾ TOÁN ----
+        const ta = drv.totalAssets[idx] || 1;
+        const ca = drv.currentAssets[idx], nca = drv.nonCurrentAssets[idx];
+        const tl = drv.totalLiabilities[idx], eq = d.bs.equity[idx];
+        const nwc = drv.nwc[idx];
+        const eqPct = F.safeDiv(eq, ta) * 100;
+        const debtPct = F.safeDiv(tl, ta) * 100;
+        const lockedCapital = (d.bs.receivables[idx] || 0) + (d.bs.inventory[idx] || 0);
+        const lockedPct = F.safeDiv(lockedCapital, ta) * 100;
+
+        document.getElementById("mod1MetersContainer").innerHTML = `
+          <div class="meter-card">
+            <div class="meter-head"><span>Tỷ lệ Vốn tự có (VCSH / Tổng Tài sản)</span><span>${F.fmtNum(eqPct, 1)}%</span></div>
+            <div class="meter-track"><div class="meter-fill" style="width:${Math.min(100, Math.max(0, eqPct))}%;background:${eqPct >= 45 ? "#059669" : eqPct >= 30 ? "#d97706" : "#dc2626"};"></div></div>
+            <div class="meter-note">VCSH: <strong>${F.fmtNum(eq)} tỷ</strong> vs Tổng nợ phải trả: <strong>${F.fmtNum(tl)} tỷ</strong> (${F.fmtNum(debtPct, 1)}%).</div>
+          </div>
+          <div class="meter-card">
+            <div class="meter-head"><span>Vốn lưu động ròng (NWC = TSNH − Nợ NH)</span><span style="color:${nwc >= 0 ? "#059669" : "#dc2626"}">${nwc >= 0 ? "+" : ""}${F.fmtNum(nwc)} tỷ</span></div>
+            <div class="meter-track"><div class="meter-fill" style="width:${Math.min(100, Math.max(8, r.currentRatio * 45))}%;background:${r.currentRatio >= 1.2 ? "#2563eb" : "#dc2626"};"></div></div>
+            <div class="meter-note">Current Ratio = <strong>${F.fmtNum(r.currentRatio, 2)}x</strong> · Quick Ratio = <strong>${F.fmtNum(r.quickRatio, 2)}x</strong>.</div>
+          </div>
+          <div class="meter-card">
+            <div class="meter-head"><span>Tài sản đang bị giam (Phải thu + Tồn kho / Tổng TS)</span><span>${F.fmtNum(lockedPct, 1)}%</span></div>
+            <div class="meter-track"><div class="meter-fill" style="width:${Math.min(100, Math.max(0, lockedPct))}%;background:${lockedPct <= 35 ? "#059669" : lockedPct <= 50 ? "#d97706" : "#dc2626"};"></div></div>
+            <div class="meter-note">Phải thu (${F.fmtNum(d.bs.receivables[idx])} tỷ) + Tồn kho (${F.fmtNum(d.bs.inventory[idx])} tỷ) = <strong>${F.fmtNum(lockedCapital)} tỷ</strong>.</div>
+          </div>
+        `;
+
+        const m1Level = eqPct >= 45 && nwc > 0 ? "good" : (nwc < 0 || debtPct > 65 ? "danger" : "warn");
+        document.getElementById("mod1VerdictBox").innerHTML = `
+          <div class="alert-item ${m1Level}">
+            <div class="alert-title">${eqPct >= 50 ? "✅ Doanh nghiệp chủ yếu sống bằng Vốn tự có" : "⚠️ Doanh nghiệp đang dùng đòn bẩy Nợ cao hơn Vốn tự có"}</div>
+            <div class="alert-desc">${nwc >= 0 ? `Vốn lưu động ròng dương (+${F.fmtNum(nwc)} tỷ) giúp đảm bảo thanh toán ngắn hạn.` : `Vốn lưu động ròng âm (${F.fmtNum(nwc)} tỷ) — cảnh báo áp lực trả nợ ngắn hạn.`} ${lockedPct > 40 ? "Tỷ trọng phải thu & tồn kho chiếm trên 40% tổng tài sản, cần theo dõi vòng quay vốn." : "Tỷ trọng phải thu & tồn kho ở mức kiểm soát được."}</div>
+          </div>
+        `;
+
+        if (typeof Chart !== "undefined") {
+          destroyChart("mod1");
+          state.charts.mod1 = new Chart(document.getElementById("mod1StructureChart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: ["Cơ cấu Tài sản", "Cơ cấu Nguồn vốn"],
+              datasets: [
+                { label: "TS Ngắn hạn", data: [ca, 0], backgroundColor: "#3b82f6", borderRadius: 5 },
+                { label: "TS Dài hạn", data: [nca, 0], backgroundColor: "#1e3a8a", borderRadius: 5 },
+                { label: "Nợ ngắn hạn", data: [0, drv.currentLiabilities[idx]], backgroundColor: "#f97316", borderRadius: 5 },
+                { label: "Nợ dài hạn", data: [0, d.bs.longTermDebt[idx]], backgroundColor: "#dc2626", borderRadius: 5 },
+                { label: "Vốn chủ sở hữu", data: [0, eq], backgroundColor: "#059669", borderRadius: 5 }
+              ]
+            },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: d.unit } } }
+            }
+          });
+        }
+
+        // ---- MODULE 2: KQKD & LƯU CHUYỂN TIỀN TỆ ----
+        const rev = d.is.revenue[idx], gp = drv.grossProfit[idx], ebda = drv.ebitda[idx], ebit = drv.ebit[idx], ebt = drv.ebt[idx], np = drv.netProfit[idx];
+        const ocf = d.cf.ocf[idx];
+        const cashRatio = np > 0 ? F.safeDiv(ocf, np) : 0;
+
+        if (typeof Chart !== "undefined") {
+          destroyChart("mod2Funnel");
+          state.charts.mod2Funnel = new Chart(document.getElementById("mod2FunnelChart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: [
+                `Doanh thu (100%)`,
+                `LN Gộp (${F.fmtPct(r.grossMargin)})`,
+                `EBITDA (${F.fmtPct(r.ebitdaMargin)})`,
+                `EBIT (${F.fmtPct(F.safeDiv(ebit, rev))})`,
+                `LNTT (${F.fmtPct(F.safeDiv(ebt, rev))})`,
+                `LNST (${F.fmtPct(r.netMargin)})`
+              ],
+              datasets: [{
+                label: `Tỷ đồng (${pLabel})`,
+                data: [rev, gp, ebda, ebit, ebt, np],
+                backgroundColor: ["#1e3a8a", "#2563eb", "#0ea5e9", "#f59e0b", "#10b981", "#059669"],
+                borderRadius: 6
+              }]
+            },
+            options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+          });
+
+          destroyChart("mod2Cash");
+          state.charts.mod2Cash = new Chart(document.getElementById("mod2CashVsProfitChart").getContext("2d"), {
+            type: "bar",
+            data: {
+              labels: d.periods,
+              datasets: [
+                { label: "LNST (Lợi nhuận sổ sách)", data: drv.netProfit, backgroundColor: "#2563eb", borderRadius: 6 },
+                { label: "OCF (Tiền thật từ HĐKD)", data: d.cf.ocf, backgroundColor: "#059669", borderRadius: 6 },
+                { label: "FCF (Dòng tiền tự do)", data: drv.fcf, type: "line", borderColor: "#f59e0b", backgroundColor: "#f59e0b", borderWidth: 2.5, tension: 0.3 }
+              ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        }
+
+        const cogsPct = F.safeDiv(d.is.cogs[idx], rev), sgaPct = F.safeDiv(d.is.sga[idx], rev);
+        document.getElementById("mod2VerdictBox").innerHTML = `
+          <div class="alert-item ${ocf < 0 ? "danger" : cashRatio >= 0.8 ? "good" : "warn"}">
+            <div class="alert-title">${ocf < 0 ? "🚨 Cảnh báo đỏ: Lãi trên sổ sách nhưng Tiền thực từ kinh doanh ÂM" : cashRatio >= 0.8 ? "✅ Chất lượng lợi nhuận tốt: Tiền thật về tương ứng với lợi nhuận" : "⚠️ Tiền về chậm hơn lợi nhuận trên giấy"}</div>
+            <div class="alert-desc">Kỳ ${pLabel}: Giá vốn ăn <strong>${F.fmtPct(cogsPct)}</strong> và CP Bán hàng/QLDN ăn <strong>${F.fmtPct(sgaPct)}</strong> doanh thu. LNST đạt <strong>${F.fmtNum(np)} tỷ</strong> trong khi OCF đạt <strong>${F.fmtNum(ocf)} tỷ</strong> (tỷ lệ OCF/LNST = <strong>${np > 0 ? F.fmtPct(cashRatio) : "N/A"}</strong>).</div>
+          </div>
+        `;
+
+        // ---- MODULE 3: RADAR 4 TRỤ CỘT & DUPONT ROE ----
+        const sLiq = Math.min(100, Math.max(15, Math.round(r.currentRatio * 55)));
+        const sLev = Math.min(100, Math.max(15, Math.round(100 - r.debtToEquity * 32)));
+        const sProf = Math.min(100, Math.max(15, Math.round(r.roe * 420)));
+        const sEff = Math.min(100, Math.max(15, Math.round(r.assetTurnover * 75)));
+
+        if (typeof Chart !== "undefined") {
+          destroyChart("mod3Radar");
+          state.charts.mod3Radar = new Chart(document.getElementById("mod3RadarChart").getContext("2d"), {
+            type: "radar",
+            data: {
+              labels: ["Thanh toán (Liquidity)", "An toàn nợ (Solvency)", "Sinh lời (Profitability)", "Hiệu quả TS (Efficiency)"],
+              datasets: [{
+                label: `${d.companyName} (${pLabel})`,
+                data: [sLiq, sLev, sProf, sEff],
+                backgroundColor: "rgba(37, 99, 235, 0.22)",
+                borderColor: "#2563eb",
+                pointBackgroundColor: "#2563eb",
+                borderWidth: 2.5
+              }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100, ticks: { stepSize: 25 } } } }
+          });
+        }
+
+        const em = F.safeDiv(ta, eq); // Equity Multiplier
+        document.getElementById("mod3DupontFlow").innerHTML = `
+          <div class="dupont-node"><div class="dupont-node-label">Biên LN ròng</div><div class="dupont-node-val">${F.fmtPct(r.netMargin)}</div></div>
+          <div class="dupont-op">×</div>
+          <div class="dupont-node"><div class="dupont-node-label">Vòng quay TS</div><div class="dupont-node-val">${F.fmtNum(r.assetTurnover, 2)}x</div></div>
+          <div class="dupont-op">×</div>
+          <div class="dupont-node"><div class="dupont-node-label">Đòn bẩy (TS/VCSH)</div><div class="dupont-node-val">${F.fmtNum(em, 2)}x</div></div>
+          <div class="dupont-op">=</div>
+          <div class="dupont-node result"><div class="dupont-node-label">ROE</div><div class="dupont-node-val">${F.fmtPct(r.roe)}</div></div>
+        `;
+        const dupontDriver = em > 2.5 ? "Đòn bẩy tài chính (vay nợ) đang khuếch đại ROE — cần lưu ý rủi ro lãi suất." : (r.netMargin >= 0.1 ? "Biên lợi nhuận ròng tốt là động lực lành mạnh tạo ra ROE." : "Biên ròng còn mỏng, cải thiện biên lợi nhuận hoặc vòng quay tài sản sẽ giúp tăng ROE bền vững.");
+        document.getElementById("mod3DupontVerdict").innerHTML = `
+          <div class="alert-item ${em > 2.5 ? "warn" : "good"}">
+            <div class="alert-title">Giải mã động lực ROE (${F.fmtPct(r.roe)})</div>
+            <div class="alert-desc">${dupontDriver}</div>
+          </div>
+        `;
+
+        // ---- MODULE 4: THỰC HÀNH 4 BƯỚC TỰ ĐỘNG ----
+        const revYoy = F.yoyPct(d.is.revenue, idx);
+        const step1Ok = revYoy === null ? "warn" : (revYoy >= 0.05 ? "good" : revYoy >= 0 ? "warn" : "danger");
+        const step2Ok = r.grossMargin >= 0.2 && r.ebitdaMargin >= 0.12 ? "good" : (r.grossMargin >= 0.12 ? "warn" : "danger");
+        const step3Ok = ocf > 0 && ocf >= np * 0.6 ? "good" : (ocf > 0 ? "warn" : "danger");
+        const step4Ok = r.currentRatio >= 1.2 && r.debtToEquity <= 1.5 ? "good" : "warn";
+
+        document.getElementById("mod4StepsGrid").innerHTML = `
+          <div class="step-audit-card ${step1Ok}">
+            <div class="step-audit-head"><span>Bước 1: Xu hướng tăng trưởng</span><span class="badge badge-${step1Ok}">${step1Ok === "good" ? "Tích cực" : step1Ok === "warn" ? "Chậm" : "Suy giảm"}</span></div>
+            <div class="muted">Doanh thu kỳ ${pLabel}: <strong>${F.fmtNum(rev)} tỷ</strong> (${revYoy === null ? "Kỳ cơ sở" : (revYoy >= 0 ? "+" : "") + F.fmtPct(revYoy) + " YoY"}).</div>
+          </div>
+          <div class="step-audit-card ${step2Ok}">
+            <div class="step-audit-head"><span>Bước 2: Biên lợi nhuận</span><span class="badge badge-${step2Ok}">${step2Ok === "good" ? "Khỏe" : step2Ok === "warn" ? "Trung bình" : "Mỏng"}</span></div>
+            <div class="muted">Biên gộp <strong>${F.fmtPct(r.grossMargin)}</strong> · Biên EBITDA <strong>${F.fmtPct(r.ebitdaMargin)}</strong> · Biên ròng <strong>${F.fmtPct(r.netMargin)}</strong>.</div>
+          </div>
+          <div class="step-audit-card ${step3Ok}">
+            <div class="step-audit-head"><span>Bước 3: Tiền thật &amp; Red Flags</span><span class="badge badge-${step3Ok}">${step3Ok === "good" ? "Tiền tốt" : step3Ok === "warn" ? "Yếu" : "Rủi ro"}</span></div>
+            <div class="muted">OCF: <strong>${F.fmtNum(ocf)} tỷ</strong> · Hệ thống đang phát hiện <strong>${state.alerts.filter(a => a.level !== "good").length}</strong> cảnh báo cần lưu ý.</div>
+          </div>
+          <div class="step-audit-card ${step4Ok}">
+            <div class="step-audit-head"><span>Bước 4: An toàn cấu trúc</span><span class="badge badge-${step4Ok}">${step4Ok === "good" ? "An toàn" : "Theo dõi"}</span></div>
+            <div class="muted">Current Ratio <strong>${F.fmtNum(r.currentRatio, 2)}x</strong> · D/E <strong>${F.fmtNum(r.debtToEquity, 2)}x</strong> · DSO <strong>${F.fmtNum(r.dso, 0)} ngày</strong>.</div>
+          </div>
+        `;
+
+        const autoActions = [];
+        if (r.dso > 65) autoActions.push({ level: "warn", title: "1. Siết công nợ phải thu (DSO đang cao: " + F.fmtNum(r.dso, 0) + " ngày)", desc: "Áp dụng chiết khấu thanh toán sớm hoặc giới hạn hạn mức bán chịu để kéo DSO về dưới 60 ngày." });
+        if (ocf < np * 0.6) autoActions.push({ level: "danger", title: "2. Ưu tiên chuyển lợi nhuận thành tiền mặt (OCF đang thấp hơn LNST)", desc: "Rà soát tốc độ luân chuyển hàng tồn kho và đối chiếu các khoản thu nhập tài chính chưa thu tiền." });
+        if (r.grossMargin < 0.25) autoActions.push({ level: "warn", title: "3. Bảo vệ biên lợi nhuận gộp (" + F.fmtPct(r.grossMargin) + ")", desc: "Đàm phán lại giá đầu vào với nhà cung cấp và cơ cấu lại danh mục sản phẩm có biên cao hơn." });
+        if (!autoActions.length) autoActions.push({ level: "good", title: "Doanh nghiệp đang vận hành hiệu quả — Sẵn sàng mở rộng quy mô", desc: "Duy trì kỷ luật vốn lưu động và xem tab Dự báo 3 năm / Định giá để lập kế hoạch đầu tư." });
+        document.getElementById("mod4ActionsList").innerHTML = autoActions.map(a => `
+          <div class="alert-item ${a.level}"><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div></div>
+        `).join("");
+
+        // ---- MODULE 5: AUTO SANITY CHECK & GỢI Ý HỎI AI TIẾP ----
+        const bsDiff = Math.abs(ta - (tl + eq));
+        const effTax = ebt > 0 ? F.safeDiv(d.is.taxExpense[idx], ebt) : 0;
+        const finShare = ebt > 0 ? F.safeDiv(d.is.finIncome[idx], ebt) : 0;
+
+        const c1 = bsDiff < 1 ? "good" : "danger";
+        const c2 = (ebt <= 0 || (effTax >= 0.12 && effTax <= 0.26)) ? "good" : "warn";
+        const c3 = ocf >= 0 ? "good" : "danger";
+        const c4 = finShare <= 0.3 ? "good" : "warn";
+
+        document.getElementById("mod5SanityGrid").innerHTML = `
+          <div class="step-audit-card ${c1}">
+            <div class="step-audit-head"><span>1. Cân bằng CĐKT</span><span class="badge badge-${c1}">${c1 === "good" ? "Khớp 100%" : "Lệch " + F.fmtNum(bsDiff) + " tỷ"}</span></div>
+            <div class="muted">Tổng TS (${F.fmtNum(ta)}) vs Nợ + VCSH (${F.fmtNum(tl + eq)}).</div>
+          </div>
+          <div class="step-audit-card ${c2}">
+            <div class="step-audit-head"><span>2. Thuế suất thực tế</span><span class="badge badge-${c2}">${F.fmtPct(effTax)}</span></div>
+            <div class="muted">${c2 === "good" ? "Nằm trong khung hợp lý quanh 20%." : "Lệch khỏi mức chuẩn 20%, cần kiểm tra ưu đãi thuế hoặc chi phí không được trừ."}</div>
+          </div>
+          <div class="step-audit-card ${c3}">
+            <div class="step-audit-head"><span>3. Dấu Dòng tiền (OCF)</span><span class="badge badge-${c3}">${ocf >= 0 ? "Dương" : "Âm"}</span></div>
+            <div class="muted">OCF = ${F.fmtNum(ocf)} tỷ · Khi hỏi AI phải nhắc rõ dấu âm/dương để tránh hiểu nhầm.</div>
+          </div>
+          <div class="step-audit-card ${c4}">
+            <div class="step-audit-head"><span>4. Tỷ trọng Thu nhập TC</span><span class="badge badge-${c4}">${F.fmtPct(finShare)} LNTT</span></div>
+            <div class="muted">${c4 === "good" ? "Lợi nhuận chủ yếu đến từ HĐKD cốt lõi." : "Thu nhập tài chính chiếm tỷ trọng lớn, cần hỏi AI bóc tách lợi nhuận bất thường."}</div>
+          </div>
+        `;
+
+        const smartQs = [
+          `Dựa trên số liệu kỳ ${pLabel} của ${d.companyName} (Doanh thu ${F.fmtNum(rev)} tỷ, LNST ${F.fmtNum(np)} tỷ, OCF ${F.fmtNum(ocf)} tỷ), hãy chỉ ra nguyên nhân gốc rễ lớn nhất làm thay đổi lợi nhuận và dòng tiền.`,
+          `Phân tích cây DuPont ROE (${F.fmtPct(r.roe)} = Biên ròng ${F.fmtPct(r.netMargin)} × VQ Tài sản ${F.fmtNum(r.assetTurnover, 2)}x × Đòn bẩy ${F.fmtNum(em, 2)}x) và đề xuất 3 hành động cụ thể tăng ROE an toàn trong 12 tháng tới.`,
+          state.alerts[0] ? `Hệ thống đang cảnh báo: "${state.alerts[0].title}". Hãy đóng vai CFO lập kế hoạch xử lý trong 90 ngày kèm KPI đo lường.` : `Lập kịch bản ứng phó nếu doanh thu năm tới giảm 15% và lãi suất vay tăng 2%.`
+        ];
+        window._mod5SmartQs = smartQs;
+        document.getElementById("mod5SmartQuestions").innerHTML = smartQs.map((q, qi) => `
+          <div class="smart-q-item">
+            <div class="smart-q-text">💬 ${esc(q)}</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm" onclick="window.copySmartModQ(${qi}, this)">📋 Copy</button>
+              <button class="btn btn-primary btn-sm" onclick="window.sendSmartModQToChat(${qi})">🚀 Gửi sang Chat AI</button>
+            </div>
           </div>
         `).join("");
       }
+
+      window.switchLearningModule = function (num) {
+        state.activeLearningMod = num;
+        for (let i = 1; i <= 5; i++) {
+          document.getElementById("modBtn-" + i)?.classList.toggle("active", i === num);
+          document.getElementById("modPane-" + i)?.classList.toggle("active", i === num);
+        }
+        renderLearning();
+      };
+
+      window.copySmartModQ = async function (idx, btn) {
+        const q = (window._mod5SmartQs || [])[idx];
+        if (!q) return;
+        try {
+          await navigator.clipboard.writeText(q);
+          const old = btn.textContent; btn.textContent = "✅ Đã copy!";
+          setTimeout(() => btn.textContent = old, 1500);
+        } catch (e) { showStatus("Hãy bôi đen và nhấn Ctrl+C.", "warn"); }
+      };
+
+      window.sendSmartModQToChat = function (idx) {
+        const q = (window._mod5SmartQs || [])[idx];
+        if (!q) return;
+        window.switchTab("tab-doc-ai");
+        const inp = document.getElementById("docChatInput");
+        if (inp) { inp.value = q; inp.focus(); }
+        showStatus("✅ Đã chuyển câu hỏi sang khung Chat AI! Bấm '🚀 Hỏi AI' hoặc '📋 Copy kèm file'.");
+      };
 
       // Global bindings
       window.switchTab = function (id) {
@@ -1999,7 +2667,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         document.getElementById("fcNwcPct").value = 15;
         updateForecast();
       };
-      window.renderDashboard = renderDashboard;
+      window.renderDashboard = function () { renderDashboard(); renderLearning(); };
       window.updateForecast = updateForecast;
       window.updateValuationAndPeer = updateValuationAndPeer;
       window.renderPromptLibrary = renderPromptLibrary;
@@ -2088,6 +2756,355 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           showStatus(`Đã khôi phục "${file.name}".`);
         } catch (e) { showStatus("Lỗi đọc JSON: " + e.message, "error"); } finally { ev.target.value = ""; }
       };
+
+
+      // ================= 5. DOC READER (PDF/WORD/EXCEL/IMAGE) & CHAT AI (v3.0) =================
+      const DOC_TEMPLATES = [
+        {
+          title: "Template 1: Tóm Tắt BCTC",
+          text: `Hãy tóm tắt báo cáo tài chính [QUÝ/NĂM] này theo định dạng sau:\n1. Doanh thu thuần (VNĐ)\n2. Lợi nhuận ròng (VNĐ & %)\n3. Tổng tài sản\n4. Nợ phải trả\n5. Vốn chủ sở hữu\n6. Dòng tiền hoạt động & 3 rủi ro lớn nhất`
+        },
+        {
+          title: "Template 2: Trích Xuất Dữ Liệu Dòng Tiền",
+          text: `Từ báo cáo này, hãy trích xuất tất cả dòng tiền từ hoạt động kinh doanh, hoạt động đầu tư, và hoạt động tài chính. Lập thành bảng Markdown có 3 cột rõ ràng.`
+        },
+        {
+          title: "Template 3: Phân Tích Dòng Tiền",
+          text: `Phân tích dòng tiền của công ty. Tổng dòng tiền vào có đủ để trả lương, thuế, và lãi vay không? Nếu thiếu, thiếu bao nhiêu và cần xử lý thế nào?`
+        },
+        {
+          title: "Template 4: So Sánh Nhiều Báo Cáo (Năm/Quý)",
+          text: `So sánh các báo cáo đã tải lên (ví dụ 2024 và 2025, hoặc Q1 2024 - Q1 2025 - Q1 2026). Hãy lập bảng so sánh Doanh thu, Lợi nhuận, ROA và chỉ ra:\n— Doanh thu tăng hay giảm?\n— Lợi nhuận xu hướng thế nào?\n— 5 thay đổi lớn nhất và lý do có thể là gì?`
+        },
+        {
+          title: "Template 5: Dự Báo & Khuyến Nghị",
+          text: `Dựa trên xu hướng 3 năm qua, hãy dự báo doanh thu Q2-Q4 năm nay sẽ như thế nào. Ngoài ra, bạn khuyên công ty nên ưu tiên cải thiện điều gì?`
+        },
+        {
+          title: "Template 6: Nhận Diện 3 Rủi Ro Tài Chính Lớn Nhất",
+          text: `Từ báo cáo này, hãy liệt kê 3 rủi ro tài chính lớn nhất (kèm số liệu cụ thể) và đề xuất cách giải quyết thực tế cho từng rủi ro.`
+        }
+      ];
+
+      const docState = {
+        files: [], // { id, name, type, text, imageBase64, mimeType }
+        messages: [] // { role: 'user'|'ai', text }
+      };
+
+      function renderDocTemplates() {
+        const el = document.getElementById("docTemplatesGrid");
+        if (!el) return;
+        el.innerHTML = DOC_TEMPLATES.slice(0, 5).map((t, idx) => `
+          <div class="prompt-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+              <h4 style="margin:0;">${t.title}</h4>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-sm" onclick="window.copyDocTpl(${idx}, this)">📋 Copy mẫu</button>
+                <button class="btn btn-primary btn-sm" onclick="window.applyDocTemplate(${idx})">↘️ Đưa vào khung chat</button>
+              </div>
+            </div>
+            <pre class="prompt-pre">${esc(t.text)}</pre>
+          </div>
+        `).join("");
+      }
+
+      function renderUploadedChips() {
+        const el = document.getElementById("uploadedFileChips");
+        if (!el) return;
+        if (!docState.files.length) {
+          el.innerHTML = `<span class="muted">Chưa có file nào được tải lên.</span>`;
+          return;
+        }
+        el.innerHTML = docState.files.map((f, i) => `
+          <div class="file-chip">
+            ${f.imageBase64 ? `<img src="${f.imageBase64}" alt="img" />` : `<span>${f.type === "pdf" ? "📕" : f.type === "docx" ? "📘" : f.type === "xlsx" ? "📗" : "📄"}</span>`}
+            <span>${esc(f.name)}</span>
+            <span class="muted" style="font-size:11px;">(${f.imageBase64 ? "Ảnh" : f.text.length + " ký tự"})</span>
+            <button class="chip-remove" onclick="window.removeUploadedDoc(${i})" title="Xóa file">×</button>
+          </div>
+        `).join("");
+      }
+
+      function appendChatMsg(role, text) {
+        docState.messages.push({ role, text });
+        const box = document.getElementById("docChatBox");
+        if (!box) return;
+        const div = document.createElement("div");
+        div.className = "chat-msg " + role;
+        div.textContent = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+      }
+
+      async function parseSingleFile(file) {
+        const ext = (file.name.split(".").pop() || "").toLowerCase();
+        // Image
+        if (["png", "jpg", "jpeg", "webp"].includes(ext)) {
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          return { name: file.name, type: "image", text: `[Ảnh chụp bảng biểu: ${file.name}]`, imageBase64: dataUrl, mimeType: file.type || "image/jpeg" };
+        }
+        // PDF
+        if (ext === "pdf") {
+          if (typeof pdfjsLib === "undefined") throw new Error("Thư viện PDF.js chưa tải xong (cần kết nối mạng).");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+          const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+          let fullText = "";
+          const maxPages = Math.min(pdf.numPages, 30);
+          for (let p = 1; p <= maxPages; p++) {
+            const page = await pdf.getPage(p);
+            const content = await page.getTextContent();
+            fullText += `\n--- Trang ${p} ---\n` + content.items.map(it => it.str).join(" ");
+          }
+          return { name: file.name, type: "pdf", text: fullText.trim() || "(PDF dạng ảnh scan — hãy chụp ảnh bảng biểu tải lên để AI đọc trực tiếp)" };
+        }
+        // Word (.docx)
+        if (ext === "docx") {
+          if (typeof mammoth === "undefined") throw new Error("Thư viện Mammoth.js chưa tải xong (cần kết nối mạng).");
+          const res = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+          return { name: file.name, type: "docx", text: (res.value || "").trim() };
+        }
+        // Excel / CSV
+        if (["xlsx", "xls", "csv"].includes(ext)) {
+          if (typeof XLSX === "undefined") throw new Error("Thư viện SheetJS chưa tải xong.");
+          const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+          let out = "";
+          wb.SheetNames.forEach(sn => {
+            out += `\n--- Sheet: ${sn} ---\n` + XLSX.utils.sheet_to_csv(wb.Sheets[sn]);
+          });
+          return { name: file.name, type: "xlsx", text: out.trim() };
+        }
+        // Plain text
+        return { name: file.name, type: "txt", text: await file.text() };
+      }
+
+      async function processDocFileList(fileList) {
+        const st = document.getElementById("docParseStatus");
+        st.className = "inline-status";
+        st.textContent = `⏳ Đang đọc ${fileList.length} file...`;
+        let ok = 0;
+        for (const file of fileList) {
+          try {
+            const parsed = await parseSingleFile(file);
+            docState.files.push(parsed);
+            ok++;
+          } catch (err) {
+            showStatus(`Lỗi đọc file "${file.name}": ${err.message}`, "error");
+          }
+        }
+        renderUploadedChips();
+        st.textContent = ok > 0 ? `✅ Đã đọc xong ${ok} file. Bạn có thể đặt câu hỏi bên dưới!` : "⚠️ Không đọc được file nào.";
+      }
+
+      function buildCombinedDocText() {
+        return docState.files.map((f, i) => `=== FILE ${i + 1}: ${f.name} ===\n${f.text.slice(0, 28000)}`).join("\n\n");
+      }
+
+      window.syncDocAiKey = function (fromDoc) {
+        const p1 = document.getElementById("aiProviderSelect"), k1 = document.getElementById("aiApiKeyInput");
+        const p2 = document.getElementById("docAiProvider"), k2 = document.getElementById("docAiKey");
+        if (fromDoc) { p1.value = p2.value; k1.value = k2.value; }
+        else { p2.value = p1.value; k2.value = k1.value; }
+        window.saveAiConfig();
+      };
+
+      window.onDocDragOver = function (e) { e.preventDefault(); document.getElementById("docDropzone").classList.add("dragover"); };
+      window.onDocDragLeave = function () { document.getElementById("docDropzone").classList.remove("dragover"); };
+      window.onDocDrop = function (e) {
+        e.preventDefault();
+        document.getElementById("docDropzone").classList.remove("dragover");
+        if (e.dataTransfer.files?.length) processDocFileList(e.dataTransfer.files);
+      };
+      window.handleMultiDocUpload = function (ev) {
+        if (ev.target.files?.length) processDocFileList(ev.target.files);
+        ev.target.value = "";
+      };
+      window.removeUploadedDoc = function (idx) {
+        docState.files.splice(idx, 1);
+        renderUploadedChips();
+      };
+      window.clearUploadedDocs = function () {
+        docState.files = [];
+        renderUploadedChips();
+        document.getElementById("docParseStatus").textContent = "";
+      };
+      window.applyDocTemplate = function (idx) {
+        const inp = document.getElementById("docChatInput");
+        inp.value = DOC_TEMPLATES[idx].text;
+        inp.focus();
+      };
+      window.copyDocTpl = async function (idx, btn) {
+        try {
+          await navigator.clipboard.writeText(DOC_TEMPLATES[idx].text);
+          const old = btn.textContent; btn.textContent = "✅ Đã copy!";
+          setTimeout(() => btn.textContent = old, 1500);
+        } catch (e) { showStatus("Hãy bôi đen và nhấn Ctrl+C.", "warn"); }
+      };
+
+      window.loadDemoQ1Files = function () {
+        docState.files = [
+          {
+            name: "BCTC_Quy1_2026_Demo.pdf",
+            type: "pdf",
+            text: `BÁO CÁO TÀI CHÍNH QUÝ 1/2026 (Công ty mẫu - Doanh thu ~50 tỷ/năm)\nDoanh thu Q1/2026: 15 tỷ VNĐ (tăng 8% so với Q4/2025; Q1/2025: 14 tỷ; Q1/2024: 12 tỷ)\nLợi nhuận ròng Q1/2026: 1.8 tỷ VNĐ (biên ròng 12%; Q1/2025: 1.5 tỷ; Q1/2024: 1.3 tỷ)\nROA: Q1/2024 = 10.8% | Q1/2025 = 10.7% | Q1/2026 = 12.0%\nDòng tiền hoạt động: +2.2 tỷ VNĐ\nChi phí bán hàng tăng do chiến dịch marketing mới; Chi phí vốn tăng.\nTỷ lệ công nợ phải thu: 35% doanh thu.\nNợ ngắn hạn: 1.2 tỷ VNĐ. Tiền dự phòng chỉ đủ duy trì 2 tháng hoạt động.`
+          }
+        ];
+        renderUploadedChips();
+        document.getElementById("docParseStatus").textContent = "✅ Đã nạp bộ dữ liệu ví dụ Q1/2026 (50 tỷ/năm).";
+        appendChatMsg("user", "Tóm tắt 5 ý chính, 3 rủi ro lớn nhất và bảng so sánh Q1/2024 - Q1/2026 từ báo cáo Q1/2026 này.");
+        appendChatMsg("ai", `1. TÓM TẮT 5 Ý CHÍNH (Q1/2026):\n• Doanh thu: 15 tỷ VNĐ (tăng +8% so với Q4/2025)\n• Lợi nhuận ròng: 1.8 tỷ VNĐ (biên lợi nhuận 12%)\n• Dòng tiền hoạt động: +2.2 tỷ VNĐ (tích cực)\n• Chi phí bán hàng tăng do chiến dịch marketing mới\n• Nợ ngắn hạn: 1.2 tỷ VNĐ (mức an toàn)\n\n2. 3 RỦI RO TÀI CHÍNH LỚN NHẤT & GIẢI PHÁP:\n⚠️ Rủi ro 1: Chi phí vốn tăng — Giải pháp: Đàm phán lại hợp đồng nhà cung cấp.\n⚠️ Rủi ro 2: Tỷ lệ công nợ 35% — Giải pháp: Siết hạn mức tín dụng và tăng tốc thu tiền khách hàng.\n⚠️ Rủi ro 3: Dòng tiền dự phòng chỉ đủ 2 tháng — Giải pháp: Xin hạn mức tín dụng dự phòng tại ngân hàng.\n\n3. BẢNG SO SÁNH Q1/2024 – Q1/2026:\n| Chỉ số | Q1 2024 | Q1 2025 | Q1 2026 | Thay đổi |\n| Doanh thu (tỷ) | 12 | 14 | 15 | +7% |\n| Lợi nhuận (tỷ) | 1.3 | 1.5 | 1.8 | +20% |\n| ROA | 10.8% | 10.7% | 12.0% | +1.3pp |`);
+      };
+
+      window.copyDocPromptWithFiles = async function () {
+        const q = document.getElementById("docChatInput").value.trim() || DOC_TEMPLATES[0].text;
+        const combined = docState.files.length ? `\n\n--- NỘI DUNG FILE ĐÍNH KÈM ---\n${buildCombinedDocText()}` : "";
+        try {
+          await navigator.clipboard.writeText(q + combined);
+          showStatus("✅ Đã copy câu hỏi + nội dung file! Bạn chỉ cần dán (Ctrl+V / Cmd+V) vào Claude, ChatGPT hoặc Gemini.");
+        } catch (e) { showStatus("Trình duyệt chặn clipboard.", "warn"); }
+      };
+
+      window.sendDocChat = async function () {
+        const inp = document.getElementById("docChatInput");
+        const q = inp.value.trim();
+        if (!q) return showStatus("Vui lòng nhập câu hỏi trước.", "warn");
+        const provider = document.getElementById("docAiProvider").value;
+        const apiKey = document.getElementById("docAiKey").value.trim();
+        const btn = document.getElementById("docSendBtn");
+
+        appendChatMsg("user", q);
+        inp.value = "";
+
+        if (!apiKey) {
+          appendChatMsg("ai", "ℹ️ Bạn chưa nhập API Key. Bạn có thể bấm nút '📋 Copy kèm file' để dán miễn phí sang Claude/ChatGPT/Gemini, hoặc dán Gemini/OpenAI API Key ở góc trên để AI trả lời trực tiếp tại đây.");
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "⏳ Đang đọc...";
+        try {
+          const textContext = buildCombinedDocText();
+          const fullPrompt = `${q}\n\n${textContext ? "--- DỮ LIỆU TỪ CÁC FILE BCTC ĐÃ TẢI LÊN ---\n" + textContext : "(Không có file đính kèm)"}`;
+          const images = docState.files.filter(f => f.imageBase64);
+          let reply = "";
+
+          if (provider === "gemini") {
+            const parts = [{ text: fullPrompt }];
+            images.forEach(img => {
+              const b64 = img.imageBase64.split(",")[1];
+              parts.push({ inline_data: { mime_type: img.mimeType || "image/jpeg", data: b64 } });
+            });
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ contents: [{ parts }] })
+            });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j?.error?.message || `Lỗi Gemini API (${res.status})`);
+            reply = j?.candidates?.[0]?.content?.parts?.[0]?.text || "Không nhận được phản hồi.";
+          } else {
+            const content = [{ type: "text", text: fullPrompt }];
+            images.forEach(img => content.push({ type: "image_url", image_url: { url: img.imageBase64 } }));
+            const res = await fetch("https://api.openai.com/v1/chat/completions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+              body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                  { role: "system", content: "Bạn là chuyên gia phân tích báo cáo tài chính (CFO). Trả lời rõ ràng, chính xác bằng tiếng Việt, lập bảng Markdown khi so sánh." },
+                  { role: "user", content }
+                ]
+              })
+            });
+            const j = await res.json();
+            if (!res.ok) throw new Error(j?.error?.message || `Lỗi OpenAI API (${res.status})`);
+            reply = j?.choices?.[0]?.message?.content || "Không nhận được phản hồi.";
+          }
+          appendChatMsg("ai", reply);
+        } catch (err) {
+          appendChatMsg("ai", "❌ Lỗi gọi AI: " + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "🚀 Hỏi AI";
+        }
+      };
+
+      function getFullChatTranscript() {
+        if (!docState.messages.length) return "";
+        return docState.messages.map(m => `${m.role === "user" ? "### CÂU HỎI" : "### PHÂN TÍCH AI"}\n${m.text}`).join("\n\n---\n\n");
+      }
+
+      window.copyLatestDocAnswer = async function () {
+        const aiMsgs = docState.messages.filter(m => m.role === "ai");
+        if (!aiMsgs.length) return showStatus("Chưa có kết quả AI để copy.", "warn");
+        try {
+          await navigator.clipboard.writeText(aiMsgs[aiMsgs.length - 1].text);
+          showStatus("✅ Đã copy kết quả phân tích mới nhất!");
+        } catch (e) { showStatus("Trình duyệt chặn clipboard.", "warn"); }
+      };
+
+      window.exportDocChatResult = function () {
+        const content = getFullChatTranscript();
+        if (!content) return showStatus("Chưa có nội dung phân tích để xuất. Hãy hỏi AI hoặc nạp ví dụ Q1/2026 trước.", "warn");
+        const fmt = document.getElementById("docExportFormat").value;
+        const ts = new Date().toISOString().slice(0, 10);
+
+        if (fmt === "pdf") {
+          const w = window.open("", "_blank");
+          w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bao_cao_BCTC_${ts}</title><style>body{font-family:Arial,sans-serif;line-height:1.6;padding:30px;color:#111;white-space:pre-wrap;}</style></head><body><h2>BÁO CÁO PHÂN TÍCH TÀI CHÍNH AI (${ts})</h2><hr/>${esc(content)}</body></html>`);
+          w.document.close();
+          w.focus();
+          setTimeout(() => w.print(), 300);
+          return;
+        }
+        if (fmt === "docx") {
+          const docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Bao cao BCTC</title></head><body style="font-family:Calibri,Arial,sans-serif;line-height:1.6;"><h2>BÁO CÁO PHÂN TÍCH TÀI CHÍNH AI (${ts})</h2><pre style="white-space:pre-wrap;font-family:inherit;">${esc(content)}</pre></body></html>`;
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob(["\ufeff", docHtml], { type: "application/msword" }));
+          a.download = `Phan_tich_BCTC_${ts}.doc`;
+          a.click();
+          showStatus("✅ Đã xuất file Word (.doc)!");
+          return;
+        }
+        if (fmt === "xlsx") {
+          if (typeof XLSX === "undefined") return showStatus("Cần có mạng để xuất Excel.", "error");
+          const wb = XLSX.utils.book_new();
+          const lines = content.split("\n");
+          const tableRows = lines.filter(l => l.trim().startsWith("|") && !l.includes("---")).map(l => l.split("|").slice(1, -1).map(c => c.trim()));
+          if (tableRows.length) {
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tableRows), "Bang_So_Sanh");
+          }
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["Nội dung phân tích"], ...lines.map(l => [l])]), "Bao_Cao_Day_Du");
+          XLSX.writeFile(wb, `Phan_tich_BCTC_${ts}.xlsx`);
+          showStatus("✅ Đã xuất file Excel (.xlsx)!");
+          return;
+        }
+        if (fmt === "html") {
+          const outHtml = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Phân tích BCTC ${ts}</title><style>body{font-family:Inter,Arial,sans-serif;max-width:900px;margin:30px auto;padding:20px;line-height:1.65;white-space:pre-wrap;background:#f8fafc;color:#0f172a;}</style></head><body>${esc(content)}</body></html>`;
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([outHtml], { type: "text/html;charset=utf-8" }));
+          a.download = `Phan_tich_BCTC_${ts}.html`;
+          a.click();
+          showStatus("✅ Đã xuất file HTML!");
+          return;
+        }
+        // md or txt
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([content], { type: "text/plain;charset=utf-8" }));
+        a.download = `Phan_tich_BCTC_${ts}.${fmt}`;
+        a.click();
+        showStatus(`✅ Đã xuất file .${fmt}!`);
+      };
+
+      document.addEventListener("DOMContentLoaded", function () {
+        renderDocTemplates();
+        renderUploadedChips();
+        window.syncDocAiKey(false);
+      });
 
       document.addEventListener("DOMContentLoaded", function () {
         loadInitial();
