@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v5.0</title>
+  <title>AI Phân Tích BCTC Cá Nhân v6.1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -767,6 +767,24 @@
       margin-top: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;
       padding: 10px 12px; font-size: 12px; color: var(--text-soft); white-space: pre-wrap;
     }
+
+    .master-upload-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; padding: 9px 10px; border-radius: 9px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff; font-size: 12.5px; font-weight: 700;
+      cursor: pointer; text-align: center; margin-bottom: 6px;
+      box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+      transition: all 0.15s;
+    }
+    .master-upload-btn:hover { background: linear-gradient(135deg, #059669, #047857); transform: translateY(-1px); }
+    .master-upload-note {
+      font-size: 11px; color: #94a3b8; line-height: 1.35; margin-bottom: 10px; padding: 0 2px;
+    }
+    .master-upload-status {
+      font-size: 11.5px; font-weight: 600; color: #34d399; margin-bottom: 8px; padding: 0 2px;
+    }
+    .master-upload-status.error { color: #f87171; }
   </style>
 </head>
 <body>
@@ -776,7 +794,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v5.0</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v6.1</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -788,6 +806,12 @@
         <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
       </select>
       <input type="text" id="companyNameInput" class="sidebar-input" placeholder="Nhập tên công ty..." onchange="window.onCompanyNameChange(this.value)" />
+      <label class="master-upload-btn" title="Tải 1 hoặc nhiều file BCTC (Excel, PDF, Word) của 1 năm hoặc nhiều năm để tự động bóc số liệu chạy toàn bộ app">
+        📂 Tải BCTC (Excel / PDF)
+        <input type="file" id="masterBctcInput" multiple accept=".pdf,.xlsx,.xls,.csv,.docx" onchange="window.handleMasterBctcUpload(event)" hidden />
+      </label>
+      <div class="master-upload-note">Chọn nhiều file (từng năm hoặc gộp nhiều năm) — tự động đọc &amp; nhảy số toàn hệ thống.</div>
+      <div id="masterUploadStatus" class="master-upload-status hidden"></div>
 
       <div class="sidebar-section-label">Điều hướng phân tích</div>
       <nav class="nav-list" role="tablist">
@@ -2130,8 +2154,21 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         state.alerts = F.detectRisksAndVariance(state.data, state.derived);
         saveLocal();
 
-        document.getElementById("companySelect").value = state.sampleKey;
+        const selEl = document.getElementById("companySelect");
+        if (selEl) {
+          const customOpt = selEl.querySelector('option[value="custom"]');
+          if (customOpt) {
+            customOpt.textContent = (state.sampleKey === "custom" && state.data.companyName)
+              ? `🏢 ${state.data.companyName}`
+              : "Dữ liệu tùy chỉnh của tôi";
+          }
+          selEl.value = state.sampleKey;
+        }
         document.getElementById("companyNameInput").value = state.data.companyName || "";
+        const topSub = document.getElementById("topbarSubtitle");
+        if (topSub) {
+          topSub.textContent = `${state.data.companyName || "Doanh nghiệp"} · Đơn vị: ${state.data.unit || "tỷ đồng"} · Tự động lưu cục bộ`;
+        }
 
         const pSel = document.getElementById("dashboardPeriodSelect");
         const oldVal = pSel.value;
@@ -2888,7 +2925,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           const periods = (rows[0] || []).slice(3).filter(x => x !== undefined && String(x).trim() !== "").map(String);
           if (!periods.length) throw new Error("Hãy dùng đúng cấu trúc file Excel mẫu (cột D trở đi là các kỳ/năm).");
           const nd = deepClone(state.data);
-          nd.companyName = file.name.replace(/\.(xlsx|xls|csv)$/i, ""); nd.periods = periods;
+          nd.companyName = detectCompanyNameFromDocs([{ text: XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]).slice(0, 2000) }], [file]); nd.periods = periods;
           ["is", "bs", "cf"].forEach(s => Object.keys(nd[s]).forEach(k => nd[s][k] = periods.map(() => 0)));
           for (let r = 1; r < rows.length; r++) {
             const s = String(rows[r][0] || "").trim().toLowerCase(), k = String(rows[r][1] || "").trim();
@@ -3484,6 +3521,361 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         a.download = `Phan_tich_BCTC_${ts}.${fmt}`;
         a.click();
         showStatus(`✅ Đã xuất file .${fmt}!`);
+      };
+
+
+      // ================= 6. MASTER AUTO-BCTC EXTRACTOR (EXCEL / PDF / WORD -> ALL TABS) (v6.0) =================
+      function normalizeVn(str) {
+        return String(str || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d").replace(/Đ/g, "D")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function parseVnNumber(token) {
+        if (typeof token === "number") return isNaN(token) ? null : token;
+        let s = String(token || "").trim();
+        if (!s || s === "-" || s === "—") return null;
+        let neg = false;
+        if (s.startsWith("(") && s.endsWith(")")) {
+          neg = true;
+          s = s.slice(1, -1).trim();
+        } else if (s.startsWith("-")) {
+          neg = true;
+          s = s.slice(1).trim();
+        }
+        s = s.replace(/[^\d.,]/g, "");
+        if (!s) return null;
+        // Handle Vietnamese/US thousands & decimal separators
+        const dotCount = (s.match(/\./g) || []).length;
+        const commaCount = (s.match(/,/g) || []).length;
+        if (dotCount > 1 && commaCount <= 1) {
+          s = s.replace(/\./g, "").replace(",", ".");
+        } else if (commaCount > 1 && dotCount <= 1) {
+          s = s.replace(/,/g, "");
+        } else if (dotCount === 1 && commaCount === 1) {
+          if (s.lastIndexOf(",") > s.lastIndexOf(".")) s = s.replace(/\./g, "").replace(",", ".");
+          else s = s.replace(/,/g, "");
+        } else if (dotCount === 1 && s.split(".")[1].length === 3) {
+          s = s.replace(/\./g, "");
+        } else if (commaCount === 1 && s.split(",")[1].length === 3) {
+          s = s.replace(/,/g, "");
+        } else {
+          s = s.replace(",", ".");
+        }
+        const num = parseFloat(s);
+        if (isNaN(num)) return null;
+        return neg ? -num : num;
+      }
+
+      function detectPeriodFromNameOrText(filename, text) {
+        const qMatch = (filename + " " + text.slice(0, 1200)).match(/(?:q|quy|quý)\s*([1-4])\s*[\/\-\s]*(20\d{2})/i);
+        if (qMatch) return `Q${qMatch[1]}/${qMatch[2]}`;
+        const yFile = filename.match(/(20\d{2})/);
+        if (yFile) return yFile[1];
+        const yText = text.slice(0, 1500).match(/(?:nam|năm)\s*(20\d{2})/i) || text.slice(0, 1500).match(/\b(202\d|201\d)\b/);
+        if (yText) return yText[1];
+        return filename.replace(/\.[^.]+$/, "").slice(0, 14);
+      }
+
+
+      function cleanCompanyName(raw) {
+        let s = String(raw || "").replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim();
+        // Cut off common trailing metadata found on BCTC headers
+        s = s.split(/(?:địa chỉ|dia chi|mã số thuế|ma so thue|mst\s*:|mẫu số|mau so|ban hành|ban hanh|báo cáo tài chính|bao cao tai chinh|bảng cân đối|bang can doi|--- trang|kỳ kế toán|ky ke toan)/i)[0];
+        s = s.replace(/^[:;\-–—.,\s]+|[:;\-–—.,\s]+$/g, "").trim();
+        if (s.length > 95) s = s.slice(0, 95).trim();
+        return s;
+      }
+
+      function detectCompanyNameFromDocs(parsedDocs, files) {
+        const legalRxList = [
+          /(?:CÔNG\s+TY\s+CỔ\s+PHẦN|CÔNG\s+TY\s+TNHH|CÔNG\s+TY\s+TRÁCH\s+NHIỆM\s+HỮU\s+HẠN|TỔNG\s+CÔNG\s+TY|NGÂN\s+HÀNG\s+(?:TMCP|THƯƠNG\s+MẠI\s+CỔ\s+PHẦN)|TẬP\s+ĐOÀN|DOANH\s+NGHIỆP\s+TƯ\s+NHÂN|CTCP)\s+[^\n\r,;]{3,90}/i,
+          /(?:CONG\s+TY\s+CO\s+PHAN|CONG\s+TY\s+TNHH|TONG\s+CONG\s+TY|NGAN\s+HANG\s+TMCP|TAP\s+DOAN)\s+[^\n\r,;]{3,90}/i
+        ];
+        const labelRx = /(?:đơn vị báo cáo|don vi bao cao|tên doanh nghiệp|ten doanh nghiep|tên công ty|ten cong ty|đơn vị|don vi)\s*[:\-]\s*([^\n\r,;]{4,90})/i;
+
+        for (const doc of parsedDocs) {
+          const head = (doc.text || "").slice(0, 3500);
+          // 1. Scan line by line for legal entity name
+          const lines = head.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          for (const line of lines.slice(0, 45)) {
+            for (const rx of legalRxList) {
+              const m = line.match(rx);
+              if (m) {
+                const cleaned = cleanCompanyName(m[0]);
+                if (cleaned.length >= 8) return cleaned;
+              }
+            }
+          }
+          // 2. Scan for explicit label (Đơn vị báo cáo / Tên doanh nghiệp)
+          for (const line of lines.slice(0, 45)) {
+            const m = line.match(labelRx);
+            if (m && m[1]) {
+              const cleaned = cleanCompanyName(m[1]);
+              if (cleaned.length >= 4 && !/^(tỷ đồng|triệu đồng|vnd|đồng)$/i.test(cleaned)) {
+                return cleaned;
+              }
+            }
+          }
+        }
+
+        // 3. Clean filename fallback (strip BCTC, years, quarters, separators)
+        if (files && files.length) {
+          let base = files[0].name.replace(/\.[^.]+$/, "");
+          base = base
+            .replace(/(?:bctc|bao[\s_-]*cao[\s_-]*tai[\s_-]*chinh|hop[\s_-]*nhat|rieng|kiem[\s_-]*toan|soat[\s_-]*xet|kqkd|cdkt|lctt)/gi, " ")
+            .replace(/(?:q[1-4]|quy[\s_-]*[1-4]|nam[\s_-]*20\d{2}|20\d{2})/gi, " ")
+            .replace(/[_\-]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (base.length >= 2) return base;
+          return files[0].name.replace(/\.[^.]+$/, "");
+        }
+        return "Doanh nghiệp của tôi";
+      }
+
+      function detectUnitDivisor(text, sampleRevenue) {
+        const norm = normalizeVn(text.slice(0, 2500));
+        if (/don vi tinh[^a-z0-9]{0,10}(ty|ti)\s*dong/.test(norm) || /\(ty dong\)/.test(norm)) return 1;
+        if (/don vi tinh[^a-z0-9]{0,10}trieu\s*dong/.test(norm) || /\(trieu dong\)/.test(norm)) return 1e3;
+        if (/don vi tinh[^a-z0-9]{0,10}(vnd|dong)/.test(norm) || /\(vnd\)/.test(norm)) {
+          if (sampleRevenue && Math.abs(sampleRevenue) > 1e7) return 1e9;
+        }
+        // Smart magnitude fallback
+        const absRev = Math.abs(sampleRevenue || 0);
+        if (absRev > 5e8) return 1e9;   // VND -> tỷ đồng
+        if (absRev > 5e5) return 1e3;   // triệu đồng -> tỷ đồng
+        return 1;
+      }
+
+      const VAS_PATTERNS = [
+        // Income Statement
+        { sec: "is", key: "revenue", rx: /doanh thu thuan|doanh thu ban hang va cung cap dich vu/ },
+        { sec: "is", key: "cogs", rx: /gia von hang ban/ },
+        { sec: "is", key: "_sellExp", rx: /chi phi ban hang/ },
+        { sec: "is", key: "_adminExp", rx: /chi phi quan ly doanh nghiep|chi phi qldn/ },
+        { sec: "is", key: "sga", rx: /chi phi ban hang\s*(&|va)\s*qldn/ },
+        { sec: "is", key: "depreciation", rx: /khau hao tscd|khau hao tai san co dinh/ },
+        { sec: "is", key: "finIncome", rx: /doanh thu hoat dong tai chinh|thu nhap tai chinh/ },
+        { sec: "is", key: "interestExpense", rx: /chi phi lai vay/ },
+        { sec: "is", key: "otherProfit", rx: /loi nhuan khac/ },
+        { sec: "is", key: "taxExpense", rx: /chi phi thue thu nhap doanh nghiep|chi phi thue tndn/ },
+        // Balance Sheet
+        { sec: "bs", key: "cash", rx: /tien va cac khoan tuong duong tien|tien va tuong duong tien/ },
+        { sec: "bs", key: "receivables", rx: /cac khoan phai thu ngan han|phai thu ngan han/ },
+        { sec: "bs", key: "inventory", rx: /hang ton kho/ },
+        { sec: "bs", key: "otherCurrent", rx: /tai san ngan han khac/ },
+        { sec: "bs", key: "fixedAssets", rx: /tai san co dinh/ },
+        { sec: "bs", key: "longTermInvest", rx: /dau tu tai chinh dai han|dau tu vao cong ty con/ },
+        { sec: "bs", key: "otherNonCurrent", rx: /tai san dai han khac/ },
+        { sec: "bs", key: "shortTermDebt", rx: /vay va no thue tai chinh ngan han|vay ngan han/ },
+        { sec: "bs", key: "payables", rx: /phai tra nguoi ban ngan han|phai tra nguoi ban/ },
+        { sec: "bs", key: "longTermDebt", rx: /vay va no thue tai chinh dai han|vay dai han/ },
+        { sec: "bs", key: "equity", rx: /von chu so huu/ },
+        // Cash Flow
+        { sec: "cf", key: "ocf", rx: /luu chuyen tien thuan tu hoat dong kinh doanh|dong tien kinh doanh/ },
+        { sec: "cf", key: "icf", rx: /luu chuyen tien thuan tu hoat dong dau tu|dong tien dau tu/ },
+        { sec: "cf", key: "fcfFin", rx: /luu chuyen tien thuan tu hoat dong tai chinh|dong tien tai chinh/ },
+        { sec: "cf", key: "capex", rx: /tien chi de mua sam.*tscd|chi mua sam tai san co dinh|capex/ }
+      ];
+
+      function extractNumbersFromLine(line) {
+        // Ignore leading VAS account codes like 01, 10, 100, 270, 300, 400
+        const tokens = line.match(/\(?-?\d[\d.,]*\)?/g) || [];
+        const nums = [];
+        for (let i = 0; i < tokens.length; i++) {
+          const raw = tokens[i];
+          const val = parseVnNumber(raw);
+          if (val === null) continue;
+          // Skip likely VAS mã số (2-3 digit integer without separators at start of line)
+          if (i === 0 && /^\d{2,3}$/.test(raw) && tokens.length >= 2) continue;
+          // Skip likely thuyết minh code like V.01 or single digit
+          if (raw.length <= 2 && Math.abs(val) < 50 && tokens.length >= 2) continue;
+          nums.push(val);
+        }
+        return nums;
+      }
+
+      function extractSinglePeriodFromLines(lines, fullText, periodLabel) {
+        const rec = {
+          period: periodLabel,
+          is: { revenue: 0, cogs: 0, sga: 0, depreciation: 0, finIncome: 0, interestExpense: 0, otherProfit: 0, taxExpense: 0 },
+          bs: { cash: 0, receivables: 0, inventory: 0, otherCurrent: 0, fixedAssets: 0, longTermInvest: 0, otherNonCurrent: 0, shortTermDebt: 0, payables: 0, longTermDebt: 0, equity: 0 },
+          cf: { ocf: 0, icf: 0, fcfFin: 0, capex: 0 },
+          _sellExp: 0, _adminExp: 0, matchedCount: 0
+        };
+
+        lines.forEach(line => {
+          const norm = normalizeVn(line);
+          if (!norm || norm.length < 4) return;
+          for (const p of VAS_PATTERNS) {
+            if (p.rx.test(norm)) {
+              const nums = extractNumbersFromLine(line);
+              if (!nums.length) continue;
+              const val = nums[0]; // First value column (usually current year/period)
+              if (p.key === "_sellExp") { if (!rec._sellExp) { rec._sellExp = Math.abs(val); rec.matchedCount++; } }
+              else if (p.key === "_adminExp") { if (!rec._adminExp) { rec._adminExp = Math.abs(val); rec.matchedCount++; } }
+              else if (rec[p.sec][p.key] === 0) {
+                // Costs in KQKD should be stored positive in our engine
+                const needAbs = ["cogs", "sga", "depreciation", "interestExpense", "taxExpense", "capex"].includes(p.key);
+                rec[p.sec][p.key] = needAbs ? Math.abs(val) : val;
+                rec.matchedCount++;
+              }
+              break;
+            }
+          }
+        });
+
+        if (rec.is.sga === 0 && (rec._sellExp || rec._adminExp)) {
+          rec.is.sga = rec._sellExp + rec._adminExp;
+        }
+
+        // Convert unit to tỷ đồng
+        const divisor = detectUnitDivisor(fullText, rec.is.revenue || rec.bs.equity || rec.bs.cash);
+        if (divisor !== 1) {
+          ["is", "bs", "cf"].forEach(sec => {
+            Object.keys(rec[sec]).forEach(k => {
+              rec[sec][k] = +(rec[sec][k] / divisor).toFixed(2);
+            });
+          });
+        }
+        return rec;
+      }
+
+      async function tryAiJsonExtraction(combinedText, fileNames) {
+        const apiKey = document.getElementById("aiApiKeyInput")?.value?.trim() || document.getElementById("docAiKey")?.value?.trim();
+        const provider = document.getElementById("aiProviderSelect")?.value || "gemini";
+        if (!apiKey) return null;
+
+        const prompt = `Bạn là hệ thống trích xuất BCTC tự động. Hãy đọc dữ liệu sau từ các file (${fileNames.join(", ")}) và trả về DUY NHẤT 1 khối JSON hợp lệ (không giải thích thêm, không markdown) theo cấu trúc sau (đơn vị quy đổi về TỶ ĐỒNG, các chi phí cogs/sga/depreciation/interestExpense/taxExpense/capex ghi SỐ DƯƠNG):
+{
+  "companyName": "Tên công ty",
+  "periods": ["2023", "2024"],
+  "is": { "revenue": [0,0], "cogs": [0,0], "sga": [0,0], "depreciation": [0,0], "finIncome": [0,0], "interestExpense": [0,0], "otherProfit": [0,0], "taxExpense": [0,0] },
+  "bs": { "cash": [0,0], "receivables": [0,0], "inventory": [0,0], "otherCurrent": [0,0], "fixedAssets": [0,0], "longTermInvest": [0,0], "otherNonCurrent": [0,0], "shortTermDebt": [0,0], "payables": [0,0], "longTermDebt": [0,0], "equity": [0,0] },
+  "cf": { "ocf": [0,0], "icf": [0,0], "fcfFin": [0,0], "capex": [0,0] }
+}
+Dữ liệu gốc:\n${combinedText.slice(0, 32000)}`;
+
+        try {
+          const raw = await window.AIPrompts.callAiApi({ provider, apiKey, prompt });
+          const match = raw.match(/\{[\s\S]*\}/);
+          if (!match) return null;
+          const parsed = JSON.parse(match[0]);
+          if (parsed && Array.isArray(parsed.periods) && parsed.periods.length > 0 && parsed.is && parsed.bs && parsed.cf) {
+            return parsed;
+          }
+        } catch (e) {
+          console.warn("AI JSON extraction fallback error:", e);
+        }
+        return null;
+      }
+
+      window.handleMasterBctcUpload = async function (ev) {
+        const files = Array.from(ev.target.files || []);
+        if (!files.length) return;
+        const stEl = document.getElementById("masterUploadStatus");
+        stEl.className = "master-upload-status";
+        stEl.textContent = `⏳ Đang đọc ${files.length} tệp BCTC...`;
+        stEl.classList.remove("hidden");
+
+        try {
+          // 1. Check if single file is our exact Excel template
+          if (files.length === 1 && /\.(xlsx|xls|csv)$/i.test(files[0].name) && typeof XLSX !== "undefined") {
+            const wb = XLSX.read(await files[0].arrayBuffer(), { type: "array" });
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+            if (rows && rows[0] && String(rows[0][0] || "").trim() === "Section" && String(rows[0][1] || "").trim() === "Key") {
+              const periods = rows[0].slice(3).filter(x => x !== undefined && String(x).trim() !== "").map(String);
+              if (periods.length) {
+                const nd = deepClone(state.data);
+                const sheetText = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]).slice(0, 2000);
+                nd.companyName = detectCompanyNameFromDocs([{ text: sheetText }], files);
+                nd.periods = periods;
+                ["is", "bs", "cf"].forEach(s => Object.keys(nd[s]).forEach(k => nd[s][k] = periods.map(() => 0)));
+                for (let r = 1; r < rows.length; r++) {
+                  const s = String(rows[r][0] || "").trim().toLowerCase(), k = String(rows[r][1] || "").trim();
+                  if (nd[s] && nd[s][k]) nd[s][k] = periods.map((_, i) => Number(rows[r][3 + i]) || 0);
+                }
+                state.data = nd; state.sampleKey = "custom";
+                recomputeAll();
+                stEl.textContent = `✅ Đã nạp chuẩn ${periods.length} kỳ từ "${files[0].name}"!`;
+                showStatus(`✅ Đã nạp tự động ${periods.length} kỳ từ file Excel mẫu — toàn bộ biểu đồ & báo cáo đã cập nhật!`);
+                return;
+              }
+            }
+          }
+
+          // 2. Parse all uploaded files (PDF / Excel / Word / CSV)
+          const parsedDocs = [];
+          const periodRecords = [];
+          let totalMatched = 0;
+
+          for (const file of files) {
+            const doc = await parseSingleFile(file);
+            parsedDocs.push(doc);
+            // Also sync to docState so user can chat with these files immediately
+            docState.files.push(doc);
+
+            const lines = doc.text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            const pLabel = detectPeriodFromNameOrText(file.name, doc.text);
+            const rec = extractSinglePeriodFromLines(lines, doc.text, pLabel);
+            totalMatched += rec.matchedCount;
+            periodRecords.push(rec);
+          }
+          renderUploadedChips();
+
+          // 3. If API Key is available and offline regex matched few items (complex PDF), try AI JSON extraction
+          let finalData = null;
+          if (totalMatched < 4 * files.length) {
+            const hasKey = !!(document.getElementById("aiApiKeyInput")?.value?.trim() || document.getElementById("docAiKey")?.value?.trim());
+            if (hasKey) {
+              stEl.textContent = "🤖 Đang dùng AI bóc tách chính xác bảng biểu...";
+              const combined = parsedDocs.map(d => `=== ${d.name} ===\n${d.text}`).join("\n\n");
+              finalData = await tryAiJsonExtraction(combined, files.map(f => f.name));
+            }
+          }
+
+          if (!finalData) {
+            // Sort periods chronologically (e.g. 2022, 2023, 2024...)
+            periodRecords.sort((a, b) => a.period.localeCompare(b.period, undefined, { numeric: true }));
+            const nd = deepClone(state.data);
+            nd.companyName = detectCompanyNameFromDocs(parsedDocs, files);
+            nd.periods = periodRecords.map(r => r.period);
+            ["is", "bs", "cf"].forEach(sec => {
+              Object.keys(nd[sec]).forEach(k => {
+                nd[sec][k] = periodRecords.map(r => r[sec][k] || 0);
+              });
+            });
+            finalData = nd;
+          } else {
+            if (!finalData.companyName || /tên công ty/i.test(finalData.companyName)) {
+              finalData.companyName = detectCompanyNameFromDocs(parsedDocs, files);
+            }
+            finalData.unit = "tỷ đồng";
+            finalData.budgetLatest = state.data.budgetLatest;
+          }
+
+          state.data = finalData;
+          state.sampleKey = "custom";
+          recomputeAll();
+
+          const msg = `✅ Đã nhận diện DN: "${finalData.companyName}" (${finalData.periods.join(", ")}) — tự động nhảy tên & số liệu toàn hệ thống!`;
+          stEl.textContent = `✅ ${finalData.companyName} (${finalData.periods.join(", ")})`;
+          showStatus(msg);
+          if (totalMatched < 4) {
+            showStatus("⚠️ Một số chỉ tiêu chưa khớp tên chuẩn VAS — bạn có thể kiểm tra/bổ sung nhanh ở tab 'BCTC & Ngang/Dọc' hoặc dán API Key để AI tự bóc 100%.", "warn");
+          }
+        } catch (err) {
+          stEl.className = "master-upload-status error";
+          stEl.textContent = "❌ Lỗi đọc tệp: " + err.message;
+          showStatus("❌ Lỗi nạp tệp BCTC: " + err.message, "error");
+        } finally {
+          ev.target.value = "";
+        }
       };
 
       document.addEventListener("DOMContentLoaded", function () {
