@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v7.0</title>
+  <title>AI Phân Tích BCTC Cá Nhân v7.1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -856,6 +856,29 @@
     .fpa-driver-card.good { border-left-color: var(--good); background: #f0fdf4; }
     .fpa-driver-card.danger { border-left-color: var(--danger); background: #fef2f2; }
     .fpa-driver-card.warn { border-left-color: var(--warn); background: #fffbeb; }
+
+    /* Deep Notes Extractor UI (v7.1) */
+    .notes-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px; margin-top: 12px;
+    }
+    .note-card {
+      background: var(--surface-soft); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px; border-top: 4px solid var(--primary);
+      display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+    }
+    .note-card.found { border-top-color: var(--good); background: #f8fafc; }
+    .note-card.empty { border-top-color: #cbd5e1; opacity: 0.88; }
+    .note-card-head {
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      font-weight: 700; font-size: 13.5px; color: var(--text);
+    }
+    .note-excerpt {
+      font-size: 12px; color: var(--text-soft); background: #fff;
+      border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px;
+      max-height: 150px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
   </style>
 </head>
 <body>
@@ -865,7 +888,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.0</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.1</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -1275,6 +1298,20 @@
 
             <div id="docParseStatus" class="inline-status" style="margin-top:8px;"></div>
             <div id="uploadedFileChips" class="file-chips"></div>
+          </div>
+
+          <div class="card" id="deepNotesCard">
+            <div class="card-header">
+              <div>
+                <h3>📑 Đọc Sâu &amp; Tóm Tắt Tự Động 4 Mục Thuyết Minh BCTC Trọng Yếu <span class="badge badge-good">v7.1 · Hỗ trợ file &gt;35 trang</span></h3>
+                <span class="muted" id="deepNotesSub">Tự động quét xuyên suốt đến 220 trang PDF (kể cả Báo cáo thường niên dày) để lọc riêng: Nợ vay · Bên liên quan · Cơ cấu doanh thu · Tồn kho &amp; Dự phòng</span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" onclick="window.askAiAllNotes()">🤖 AI Tóm tắt cả 4 mục Thuyết minh</button>
+                <button class="btn btn-sm" onclick="window.copyAllExtractedNotes(this)">📋 Copy trích xuất Thuyết minh</button>
+              </div>
+            </div>
+            <div id="deepNotesGrid" class="notes-grid"></div>
           </div>
 
           <div class="card">
@@ -3464,6 +3501,148 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
         `).join("");
       }
 
+      const NOTE_CAT_META = [
+        { key: "loans", icon: "🏦", title: "1. Nợ vay & Trái phiếu", prompt: "Phân tích chi tiết Thuyết minh Nợ vay ngắn/dài hạn, trái phiếu, lãi suất, kỳ hạn đáo hạn và rủi ro tài chính từ đoạn trích sau:" },
+        { key: "related", icon: "🤝", title: "2. Giao dịch Bên liên quan", prompt: "Phân tích Thuyết minh Giao dịch & Số dư với các Bên liên quan (công ty mẹ, công ty con, chuyển giá, cổ tức, thu nhập Ban lãnh đạo) từ đoạn trích sau:" },
+        { key: "revenue", icon: "📊", title: "3. Cơ cấu Doanh thu", prompt: "Phân tích Thuyết minh Cơ cấu Doanh thu (thành phẩm, hàng hóa, dịch vụ, chiết khấu thương mại, mảng đóng góp chính) từ đoạn trích sau:" },
+        { key: "inventory", icon: "📦", title: "4. Tồn kho & Dự phòng", prompt: "Phân tích Thuyết minh Hàng tồn kho (nguyên vật liệu, thành phẩm, hàng hóa) và Dự phòng giảm giá hàng tồn kho từ đoạn trích sau:" }
+      ];
+
+      function aggregateNotesFromDocs() {
+        const agg = { loans: [], related: [], revenue: [], inventory: [] };
+        let hasScanned = false;
+        docState.files.forEach(f => {
+          if (f.isScanned) hasScanned = true;
+          if (f.notesSections) {
+            ["loans", "related", "revenue", "inventory"].forEach(k => {
+              const sec = f.notesSections[k];
+              if (sec && sec.pages && sec.pages.length) {
+                agg[k].push({ file: f.name, totalPages: f.totalPages || 0, pages: sec.pages, text: sec.text.trim() });
+              }
+            });
+          } else if (f.text && f.text.length > 100 && !f.isScanned) {
+            // Fallback for Word / Excel / Text files
+            const norm = f.text.toLowerCase();
+            if (/(?:vay ngắn hạn|vay dài hạn|nợ thuê tài chính)/.test(norm)) agg.loans.push({ file: f.name, pages: ["Toàn văn"], text: f.text.slice(0, 2200) });
+            if (/(?:bên liên quan|công ty mẹ)/.test(norm)) agg.related.push({ file: f.name, pages: ["Toàn văn"], text: f.text.slice(0, 2200) });
+            if (/(?:doanh thu bán|thành phẩm|hàng hóa)/.test(norm)) agg.revenue.push({ file: f.name, pages: ["Toàn văn"], text: f.text.slice(0, 2200) });
+            if (/(?:hàng tồn kho|dự phòng giảm giá)/.test(norm)) agg.inventory.push({ file: f.name, pages: ["Toàn văn"], text: f.text.slice(0, 2200) });
+          }
+        });
+        return { agg, hasScanned };
+      }
+
+      function renderDeepNotesPanel() {
+        const grid = document.getElementById("deepNotesGrid");
+        if (!grid) return;
+        const { agg, hasScanned } = aggregateNotesFromDocs();
+        window._aggNotes = agg;
+
+        grid.innerHTML = NOTE_CAT_META.map(cat => {
+          const hits = agg[cat.key] || [];
+          if (!hits.length) {
+            return `
+              <div class="note-card empty">
+                <div class="note-card-head">
+                  <span>${cat.icon} ${cat.title}</span>
+                  <span class="badge">${hasScanned ? "PDF Ảnh scan" : "Chưa có dữ liệu"}</span>
+                </div>
+                <div class="muted" style="font-size:12px;">
+                  ${hasScanned
+                    ? "File PDF dạng ảnh scan (không có lớp chữ). Hãy lưu Gemini API Key ở mục ⚙️ Cấu hình API Cá nhân rồi bấm '🤖 Hỏi AI' để Vision AI đọc trực tiếp."
+                    : "Tải file PDF/Word BCTC (kể cả báo cáo thường niên >35 trang) để hệ thống tự động lọc & tóm tắt mục này."}
+                </div>
+              </div>
+            `;
+          }
+          const pageBadges = hits.map(h => `${h.file} (Tr. ${h.pages.join(", ")})`).join(" · ");
+          const combinedExcerpt = hits.map(h => `📄 ${h.file}:
+${h.text}`).join("
+
+").slice(0, 3500);
+          return `
+            <div class="note-card found">
+              <div>
+                <div class="note-card-head">
+                  <span>${cat.icon} ${cat.title}</span>
+                  <span class="badge badge-good">✅ ${hits.reduce((s, h) => s + h.pages.length, 0)} trang</span>
+                </div>
+                <div class="muted" style="font-size:11px;margin:4px 0 6px;">${esc(pageBadges)}</div>
+                <div class="note-excerpt">${esc(combinedExcerpt)}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+                <button class="btn btn-primary btn-sm" onclick="window.askAiNoteCategory('${cat.key}')">🤖 AI Phân tích sâu mục này</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      window.askAiNoteCategory = function (catKey) {
+        const meta = NOTE_CAT_META.find(c => c.key === catKey);
+        const hits = (window._aggNotes && window._aggNotes[catKey]) || [];
+        if (!meta) return;
+        const excerpt = hits.map(h => `=== ${h.file} (Trang ${h.pages.join(", ")}) ===
+${h.text}`).join("
+
+").slice(0, 14000);
+        const inp = document.getElementById("docChatInput");
+        if (inp) {
+          inp.value = `${meta.prompt}
+
+${excerpt || "(Hãy đọc trực tiếp từ các file BCTC đã tải lên)"}`;
+          inp.focus();
+        }
+        window.sendDocChat();
+      };
+
+      window.askAiAllNotes = function () {
+        const agg = window._aggNotes || {};
+        const parts = NOTE_CAT_META.map(cat => {
+          const hits = agg[cat.key] || [];
+          if (!hits.length) return "";
+          return `### ${cat.title}
+` + hits.map(h => `[${h.file} - Tr.${h.pages.join(",")}]
+${h.text.slice(0, 3200)}`).join("
+");
+        }).filter(Boolean).join("
+
+");
+
+        const inp = document.getElementById("docChatInput");
+        if (inp) {
+          inp.value = `Đóng vai Chuyên gia Phân tích Tài chính (CFA/CFO), hãy đọc sâu và tóm tắt ngắn gọn, súc tích 4 mục Thuyết minh BCTC trọng yếu sau (kèm số liệu nổi bật & cảnh báo rủi ro nếu có):
+1. Nợ vay & Trái phiếu
+2. Giao dịch Bên liên quan
+3. Cơ cấu Doanh thu
+4. Hàng tồn kho & Dự phòng
+
+${parts || "(Đọc trực tiếp từ file BCTC đã tải lên)"}`;
+          inp.focus();
+        }
+        window.sendDocChat();
+      };
+
+      window.copyAllExtractedNotes = async function (btn) {
+        const agg = window._aggNotes || {};
+        const parts = NOTE_CAT_META.map(cat => {
+          const hits = agg[cat.key] || [];
+          if (!hits.length) return "";
+          return `=== ${cat.title.toUpperCase()} ===
+` + hits.map(h => `[${h.file} - Tr.${h.pages.join(",")}]
+${h.text}`).join("
+");
+        }).filter(Boolean).join("
+
+");
+        if (!parts) return showStatus("Chưa có dữ liệu Thuyết minh được trích xuất. Hãy tải file PDF BCTC trước.", "warn");
+        try {
+          await navigator.clipboard.writeText(parts);
+          const old = btn.textContent; btn.textContent = "✅ Đã copy!";
+          setTimeout(() => btn.textContent = old, 1600);
+        } catch (e) { showStatus("Trình duyệt chặn clipboard.", "warn"); }
+      };
+
       window.switchLearningModule = function (num) {
         state.activeLearningMod = num;
         for (let i = 1; i <= 5; i++) {
@@ -4480,6 +4659,12 @@ ${txt}`;
           const isLargeReport = totalPages > 35;
           let headerText = "";
           let bctcText = "";
+          const notesSections = {
+            loans: { pages: [], text: "" },
+            related: { pages: [], text: "" },
+            revenue: { pages: [], text: "" },
+            inventory: { pages: [], text: "" }
+          };
           const maxScan = Math.min(totalPages, 220);
           for (let p = 1; p <= maxScan; p++) {
             const page = await pdf.getPage(p);
@@ -4499,12 +4684,34 @@ ${txt}`;
               .sort((a, b) => b[0] - a[0])
               .map(([_, items]) => items.sort((a, b) => a.x - b.x).map(i => i.s).join(" "));
             const pageStr = sortedLines.join("\n");
+            const normP = pageStr.toLowerCase();
+
+            // Tự động nhận diện 4 mục Thuyết minh trọng yếu trên mọi file PDF (kể cả >35 trang)
+            const isNotePage = normP.includes("thuyết minh") || normP.includes("mẫu số b 09") || normP.includes("mẫu b 09") || p >= 8;
+            if (isNotePage && pageChars > 80) {
+              if (/(?:vay và nợ thuê tài chính|vay ngắn hạn|vay dài hạn|trái phiếu phát hành)/.test(normP) && notesSections.loans.pages.length < 6) {
+                notesSections.loans.pages.push(p);
+                notesSections.loans.text += `\n[Trang ${p}]\n` + pageStr.slice(0, 2600);
+              }
+              if (/(?:bên liên quan|giao dịch với các bên liên quan|công ty mẹ cấp cao nhất|thù lao.*hội đồng quản trị)/.test(normP) && notesSections.related.pages.length < 6) {
+                notesSections.related.pages.push(p);
+                notesSections.related.text += `\n[Trang ${p}]\n` + pageStr.slice(0, 2600);
+              }
+              if (/(?:doanh thu bán hàng và cung cấp dịch vụ|doanh thu bán thành phẩm|bộ phận theo lĩnh vực kinh doanh|chiết khấu thương mại)/.test(normP) && notesSections.revenue.pages.length < 5) {
+                notesSections.revenue.pages.push(p);
+                notesSections.revenue.text += `\n[Trang ${p}]\n` + pageStr.slice(0, 2600);
+              }
+              if (/(?:hàng tồn kho|dự phòng giảm giá hàng tồn kho|nguyên vật liệu|chi phí sản xuất.*dở dang)/.test(normP) && !normP.includes("bảng cân đối kế toán") && notesSections.inventory.pages.length < 5) {
+                notesSections.inventory.pages.push(p);
+                notesSections.inventory.text += `\n[Trang ${p}]\n` + pageStr.slice(0, 2600);
+              }
+            }
+
             if (!isLargeReport) {
               fullText += `\n--- Trang ${p} ---\n` + pageStr;
             } else {
-              // Với Báo cáo thường niên dài (100-200 trang): lấy trang bìa/thông tin chung (1..22) + lọc đúng các trang BCTC (CĐKT, KQKD, LCTT)
+              // Với Báo cáo thường niên dài (35–220 trang): lấy trang bìa/thông tin chung (1..22) + BCTC + 4 mục Thuyết minh trọng yếu
               if (p <= 22) headerText += `\n--- Trang ${p} ---\n` + pageStr;
-              const normP = pageStr.toLowerCase();
               const isBctcPage = (
                 (normP.includes("bảng cân đối kế toán") || normP.includes("kết quả hoạt động kinh doanh") || normP.includes("lưu chuyển tiền tệ")) &&
                 (normP.includes("mã số") || normP.includes("thuyết minh") || normP.includes("tài sản ngắn hạn") || normP.includes("doanh thu thuần"))
@@ -4513,7 +4720,13 @@ ${txt}`;
             }
           }
           if (isLargeReport) {
-            fullText = (bctcText ? bctcText + "\n\n=== THÔNG TIN CHUNG ===\n" + headerText.slice(0, 8000) : headerText);
+            const notesBundle = [
+              notesSections.loans.text ? "=== THUYẾT MINH NỢ VAY ===" + notesSections.loans.text : "",
+              notesSections.related.text ? "=== THUYẾT MINH BÊN LIÊN QUAN ===" + notesSections.related.text : "",
+              notesSections.revenue.text ? "=== THUYẾT MINH CƠ CẤU DOANH THU ===" + notesSections.revenue.text : "",
+              notesSections.inventory.text ? "=== THUYẾT MINH HÀNG TỒN KHO ===" + notesSections.inventory.text : ""
+            ].filter(Boolean).join("\n\n");
+            fullText = (bctcText ? bctcText + "\n\n" : "") + (notesBundle ? notesBundle + "\n\n" : "") + "=== THÔNG TIN CHUNG ===\n" + headerText.slice(0, 6000);
           }
           const isScanned = rawCharCount < 900;
           const pageImages = [];
@@ -4534,8 +4747,10 @@ ${txt}`;
           return {
             name: file.name,
             type: "pdf",
+            totalPages,
             isScanned,
             pageImages,
+            notesSections,
             text: isScanned ? "(PDF dạng ảnh scan — không có lớp văn bản)" : fullText.trim()
           };
         }
@@ -4573,12 +4788,12 @@ ${txt}`;
             showStatus(`Lỗi đọc file "${file.name}": ${err.message}`, "error");
           }
         }
-        renderUploadedChips();
+        renderUploadedChips(); renderDeepNotesPanel();
         st.textContent = ok > 0 ? `✅ Đã đọc xong ${ok} file. Bạn có thể đặt câu hỏi bên dưới!` : "⚠️ Không đọc được file nào.";
       }
 
       function buildCombinedDocText() {
-        return docState.files.map((f, i) => `=== FILE ${i + 1}: ${f.name} ===\n${f.text.slice(0, 28000)}`).join("\n\n");
+        return docState.files.map((f, i) => `=== FILE ${i + 1}: ${f.name} ===\n${f.text.slice(0, 45000)}`).join("\n\n");
       }
 
       window.syncDocAiKey = function () { updateDocAiBadge(); };
@@ -4596,11 +4811,11 @@ ${txt}`;
       };
       window.removeUploadedDoc = function (idx) {
         docState.files.splice(idx, 1);
-        renderUploadedChips();
+        renderUploadedChips(); renderDeepNotesPanel();
       };
       window.clearUploadedDocs = function () {
         docState.files = [];
-        renderUploadedChips();
+        renderUploadedChips(); renderDeepNotesPanel();
         document.getElementById("docParseStatus").textContent = "";
       };
       window.applyDocTemplate = function (idx) {
@@ -4624,7 +4839,7 @@ ${txt}`;
             text: `BÁO CÁO TÀI CHÍNH QUÝ 1/2026 (Công ty mẫu - Doanh thu ~50 tỷ/năm)\nDoanh thu Q1/2026: 15 tỷ VNĐ (tăng 8% so với Q4/2025; Q1/2025: 14 tỷ; Q1/2024: 12 tỷ)\nLợi nhuận ròng Q1/2026: 1.8 tỷ VNĐ (biên ròng 12%; Q1/2025: 1.5 tỷ; Q1/2024: 1.3 tỷ)\nROA: Q1/2024 = 10.8% | Q1/2025 = 10.7% | Q1/2026 = 12.0%\nDòng tiền hoạt động: +2.2 tỷ VNĐ\nChi phí bán hàng tăng do chiến dịch marketing mới; Chi phí vốn tăng.\nTỷ lệ công nợ phải thu: 35% doanh thu.\nNợ ngắn hạn: 1.2 tỷ VNĐ. Tiền dự phòng chỉ đủ duy trì 2 tháng hoạt động.`
           }
         ];
-        renderUploadedChips();
+        renderUploadedChips(); renderDeepNotesPanel();
         document.getElementById("docParseStatus").textContent = "✅ Đã nạp bộ dữ liệu ví dụ Q1/2026 (50 tỷ/năm).";
         appendChatMsg("user", "Tóm tắt 5 ý chính, 3 rủi ro lớn nhất và bảng so sánh Q1/2024 - Q1/2026 từ báo cáo Q1/2026 này.");
         appendChatMsg("ai", `1. TÓM TẮT 5 Ý CHÍNH (Q1/2026):\n• Doanh thu: 15 tỷ VNĐ (tăng +8% so với Q4/2025)\n• Lợi nhuận ròng: 1.8 tỷ VNĐ (biên lợi nhuận 12%)\n• Dòng tiền hoạt động: +2.2 tỷ VNĐ (tích cực)\n• Chi phí bán hàng tăng do chiến dịch marketing mới\n• Nợ ngắn hạn: 1.2 tỷ VNĐ (mức an toàn)\n\n2. 3 RỦI RO TÀI CHÍNH LỚN NHẤT & GIẢI PHÁP:\n⚠️ Rủi ro 1: Chi phí vốn tăng — Giải pháp: Đàm phán lại hợp đồng nhà cung cấp.\n⚠️ Rủi ro 2: Tỷ lệ công nợ 35% — Giải pháp: Siết hạn mức tín dụng và tăng tốc thu tiền khách hàng.\n⚠️ Rủi ro 3: Dòng tiền dự phòng chỉ đủ 2 tháng — Giải pháp: Xin hạn mức tín dụng dự phòng tại ngân hàng.\n\n3. BẢNG SO SÁNH Q1/2024 – Q1/2026:\n| Chỉ số | Q1 2024 | Q1 2025 | Q1 2026 | Thay đổi |\n| Doanh thu (tỷ) | 12 | 14 | 15 | +7% |\n| Lợi nhuận (tỷ) | 1.3 | 1.5 | 1.8 | +20% |\n| ROA | 10.8% | 10.7% | 12.0% | +1.3pp |`);
@@ -5055,7 +5270,7 @@ Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
             totalMatched += rec.matchedCount;
             periodRecords.push(rec);
           }
-          renderUploadedChips();
+          renderUploadedChips(); renderDeepNotesPanel();
 
           // 3. Kiểm tra xem có phải PDF dạng ảnh scan không (như BCTC kiểm toán KPMG/Big4)
           const hasScannedPdf = parsedDocs.some(d => d.isScanned);
@@ -5117,7 +5332,7 @@ Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
 
       document.addEventListener("DOMContentLoaded", function () {
         renderDocTemplates();
-        renderUploadedChips();
+        renderUploadedChips(); renderDeepNotesPanel();
         window.syncDocAiKey(false);
       });
 
