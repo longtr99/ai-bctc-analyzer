@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v7.4</title>
+  <title>AI Phân Tích BCTC Cá Nhân v7.5</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -906,7 +906,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.4</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.5</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -919,6 +919,7 @@
         <option value="sample_vinamilk">🥛 Vinamilk - VNM (Hợp nhất 2021–2025 · KPMG)</option>
         <option value="sample_vinamilk_9m26">🥛 Vinamilk - VNM (BCTC Riêng 9T/2025–9T/2026)</option>
         <option value="sample_mcm">🐄 Giống bò sữa Mộc Châu - MCM (2020–2024 · Kiểm toán)</option>
+        <option value="sample_sbt">🌾 Thành Thành Công - Biên Hòa - SBT (NĐ 2021–2026 · EY)</option>
         <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
       </select>
       <div class="sidebar-section-label" style="margin-top:6px;">Chế độ chạy Auto (Filter)</div>
@@ -1982,6 +1983,42 @@
   <script>
     // ================= 1. DỮ LIỆU MẪU =================
     window.BCTC_SAMPLES = {
+      sample_sbt: {
+        companyName: "Công ty Cổ phần Thành Thành Công - Biên Hòa (TTC AgriS)",
+        stockCode: "SBT",
+        unit: "tỷ đồng",
+        periods: ["2021", "2022", "2023", "2024", "2025", "2026"],
+        budgetLatest: { revenue: 28000, grossProfit: 2900, ebitda: 1700, ebt: 950, netProfit: 860, ocf: 500 },
+        is: {
+          revenue:         [14924.9, 18318.9, 24743.1, 29021.3, 28482.2, 26732.8],
+          cogs:            [12708.9, 16010.7, 22022.3, 25856.6, 25497.9, 24058.9],
+          sga:             [1093.1,  1301.4,  1275.5,  1518.6,  1459.7,  1685.6],
+          depreciation:    [454.3,   510.3,   589.2,   570.4,   534.6,   514.7],
+          finIncome:       [498.6,   1085.8,  1099.5,  1298.9,  1270.0,  1482.4],
+          interestExpense: [853.0,   955.9,   1780.0,  2030.2,  1818.7,  2070.0],
+          otherProfit:     [15.2,    -91.2,   -46.3,   -6.9,    -25.7,   510.4],
+          taxExpense:      [133.2,   172.1,   114.0,   102.1,   115.6,   64.7]
+        },
+        bs: {
+          cash:            [3063.3,  4594.7,  5674.6,  8433.4,  7103.2,  9069.3],
+          receivables:     [6219.5,  8661.5,  9733.7,  11240.4, 9196.7,  10203.1],
+          inventory:       [3158.8,  4625.7,  4504.5,  3953.2,  3583.2,  4179.4],
+          otherCurrent:    [135.8,   144.6,   134.3,   124.8,   171.2,   234.2],
+          fixedAssets:     [3922.5,  4522.3,  4154.5,  4180.9,  3719.8,  3493.4],
+          longTermInvest:  [1411.3,  2552.7,  2995.6,  2997.3,  5110.8,  6045.0],
+          otherNonCurrent: [2559.8,  2628.8,  2737.1,  3148.4,  3794.1,  4574.2],
+          shortTermDebt:   [6049.5,  8713.3,  11107.3, 12777.8, 10875.2, 11925.2],
+          payables:        [2522.1,  6581.7,  6089.6,  6621.9,  4674.5,  7310.9],
+          longTermDebt:    [3661.0,  2766.5,  2233.8,  3534.5,  6278.6,  6102.1],
+          equity:          [8238.3,  9668.9,  10503.6, 11144.0, 10850.8, 12460.4]
+        },
+        cf: {
+          ocf:             [94.6,    1174.7,  687.3,   62.9,    -605.9,  -134.5],
+          icf:             [-431.8,  -2619.1, -644.9,  -2955.4, -1427.7, -3194.7],
+          fcfFin:          [1160.9,  2186.6,  538.7,   4377.2,  1014.4,  1859.3],
+          capex:           [347.9,   142.3,   262.0,   640.3,   633.6,   957.5]
+        }
+      },
       sample_mcm: {
         companyName: "Công ty Cổ phần Giống bò sữa Mộc Châu",
         stockCode: "MCM",
