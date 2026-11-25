@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v7.3</title>
+  <title>AI Phân Tích BCTC Cá Nhân v7.4</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -906,7 +906,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.3</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.4</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -916,8 +916,9 @@
         <option value="sample_5y">Mẫu 1: DN Sản xuất - TM (5 năm)</option>
         <option value="sample_q1_2026">Mẫu 2: Case Q1/2026 (Lãi TC, OCF âm)</option>
         <option value="sample_masan">🏢 Tập đoàn Masan (2022–2025 · BCTC KPMG)</option>
-        <option value="sample_vinamilk">🥛 CTCP Sữa Việt Nam - Vinamilk (2021–2025)</option>
-        <option value="sample_mcm">🐄 CTCP Giống bò sữa Mộc Châu - MCM (2020–2024)</option>
+        <option value="sample_vinamilk">🥛 Vinamilk - VNM (Hợp nhất 2021–2025 · KPMG)</option>
+        <option value="sample_vinamilk_9m26">🥛 Vinamilk - VNM (BCTC Riêng 9T/2025–9T/2026)</option>
+        <option value="sample_mcm">🐄 Giống bò sữa Mộc Châu - MCM (2020–2024 · Kiểm toán)</option>
         <option value="custom">Dữ liệu tùy chỉnh của tôi</option>
       </select>
       <div class="sidebar-section-label" style="margin-top:6px;">Chế độ chạy Auto (Filter)</div>
@@ -2018,39 +2019,75 @@
         }
       },
       sample_vinamilk: {
-        companyName: "Công ty Cổ phần Sữa Việt Nam (Vinamilk)",
+        companyName: "Công ty Cổ phần Sữa Việt Nam (Hợp nhất)",
         stockCode: "VNM",
         unit: "tỷ đồng",
         periods: ["2021", "2022", "2023", "2024", "2025"],
-        budgetLatest: { revenue: 64500, grossProfit: 26800, ebitda: 14200, ebt: 12100, netProfit: 9615, ocf: 9500 },
+        budgetLatest: { revenue: 64505, grossProfit: 26800, ebitda: 13500, ebt: 12000, netProfit: 9680, ocf: 9500 },
         is: {
-          revenue:         [60919.0, 59956.0, 60369.0, 61783.0, 63646.0],
-          cogs:            [34640.0, 36059.0, 35824.0, 36205.0, 37420.0],
-          sga:             [14470.0, 14190.0, 14420.0, 14750.0, 15280.0],
-          depreciation:    [2120.0,  2090.0,  2045.0,  2110.0,  2180.0],
-          finIncome:       [1215.0,  1380.0,  1716.0,  1570.0,  1510.0],
-          interestExpense: [296.0,   596.0,   937.0,   804.0,   796.0],
-          otherProfit:     [194.0,   5.0,     64.0,    6.0,     -10.0],
-          taxExpense:      [2289.0,  1918.0,  1949.0,  2147.0,  2236.0]
+          revenue:         [60919.2, 59956.2, 60368.9, 61782.6, 63645.9],
+          cogs:            [34640.9, 36059.0, 35824.2, 36192.4, 37436.4],
+          sga:             [14518.0, 14144.0, 14773.7, 15185.6, 15545.8],
+          depreciation:    [2366.9,  2341.0,  2300.1,  2341.1,  2362.9],
+          finIncome:       [1214.7,  1379.9,  1716.4,  1585.7,  1496.9],
+          interestExpense: [202.3,   617.5,   503.1,   428.2,   350.2],
+          otherProfit:     [149.6,   -20.0,   -16.4,   37.7,    -160.3],
+          taxExpense:      [2289.7,  1918.0,  1948.5,  2146.8,  2236.4]
         },
         bs: {
-          cash:            [23348.0, 19714.0, 23042.0, 25488.0, 23137.0],
-          receivables:     [5822.0,  6100.0,  6530.0,  6120.0,  5890.0],
-          inventory:       [6773.0,  5538.0,  6128.0,  5686.0,  6110.0],
-          otherCurrent:    [164.0,   208.0,   236.0,   250.0,   230.0],
-          fixedAssets:     [12706.0, 11903.0, 12690.0, 13010.0, 13450.0],
-          longTermInvest:  [743.0,   742.0,   827.0,   895.0,   915.0],
-          otherNonCurrent: [3776.0,  4278.0,  3220.0,  3600.0,  3580.0],
-          shortTermDebt:   [9382.0,  4867.0,  8218.0,  8990.0,  9180.0],
-          payables:        [7688.0,  10487.0, 9162.0,  9602.0,  9355.0],
-          longTermDebt:    [412.0,   312.0,   267.0,   283.0,   277.0],
-          equity:          [35850.0, 32817.0, 35026.0, 36174.0, 34500.0]
+          cash:            [23374.3, 19714.0, 23049.3, 25486.0, 23149.7],
+          receivables:     [5822.0,  6100.4,  6529.7,  6233.8,  6027.7],
+          inventory:       [6773.1,  5537.6,  6128.1,  5686.8,  6839.3],
+          otherCurrent:    [140.5,   208.4,   228.8,   147.0,   244.4],
+          fixedAssets:     [12706.6, 11903.2, 12689.7, 12550.6, 12648.9],
+          longTermInvest:  [743.9,   742.7,   831.2,   1373.2,  957.1],
+          otherNonCurrent: [3772.0,  4276.4,  3216.6,  3571.7,  3445.2],
+          shortTermDebt:   [9382.4,  4867.1,  8217.8,  9115.4,  9393.7],
+          payables:        [7686.0,  10441.3, 8920.9,  9344.1,  9126.6],
+          longTermDebt:    [413.9,   357.7,   508.9,   415.1,   309.1],
+          equity:          [35850.1, 32816.5, 35025.7, 36174.4, 34483.0]
         },
         cf: {
-          ocf:             [9432.0,  8826.0,  7887.0,  9650.0,  9280.0],
-          icf:             [-5224.0, 1315.0,  -4150.0, -3210.0, -1850.0],
-          fcfFin:          [-3950.0, -10210.0,-3120.0, -5890.0, -8120.0],
-          capex:           [1540.0,  1456.0,  1610.0,  1920.0,  2150.0]
+          ocf:             [9432.0,  8827.3,  7887.4,  9685.9,  8668.1],
+          icf:             [-3933.2, 3472.8,  -2988.5, -3739.1, 1976.1],
+          fcfFin:          [-5257.4, -12360.3,-4292.8, -6641.3, -11081.9],
+          capex:           [1531.0,  1456.9,  1579.6,  1741.5,  1762.0]
+        }
+      },
+      sample_vinamilk_9m26: {
+        companyName: "Công ty Cổ phần Sữa Việt Nam (BCTC Riêng 9T/2026)",
+        stockCode: "VNM",
+        unit: "tỷ đồng",
+        periods: ["9T/2025", "9T/2026"],
+        budgetLatest: { revenue: 43000, grossProfit: 19500, ebitda: 9200, ebt: 9500, netProfit: 7700, ocf: 6500 },
+        is: {
+          revenue:         [38858.7, 44844.4],
+          cogs:            [21421.4, 24640.6],
+          sga:             [10285.7, 11504.8],
+          depreciation:    [824.3,   869.3],
+          finIncome:       [1319.7,  1460.1],
+          interestExpense: [333.4,   431.2],
+          otherProfit:     [13.7,    12.8],
+          taxExpense:      [1499.4,  1795.5]
+        },
+        bs: {
+          cash:            [17814.0, 20226.0],
+          receivables:     [4706.5,  5418.6],
+          inventory:       [4672.3,  5622.8],
+          otherCurrent:    [115.0,   158.6],
+          fixedAssets:     [5524.3,  5281.6],
+          longTermInvest:  [12165.5, 12266.5],
+          otherNonCurrent: [954.9,   1286.0],
+          shortTermDebt:   [8841.0,  8258.9],
+          payables:        [7846.4,  9451.9],
+          longTermDebt:    [0.2,     0.2],
+          equity:          [29264.9, 32549.2]
+        },
+        cf: {
+          ocf:             [6008.8,  6403.5],
+          icf:             [2539.0,  -814.4],
+          fcfFin:          [-5857.2, -4343.1],
+          capex:           [761.8,   804.5]
         }
       },
       sample_masan: {
