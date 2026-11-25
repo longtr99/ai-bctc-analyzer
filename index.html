@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Phân Tích BCTC Cá Nhân v7.1</title>
+  <title>AI Phân Tích BCTC Cá Nhân v7.3</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -879,6 +879,24 @@
       max-height: 150px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
+
+    /* Topbar Company Legal Name & Stock Ticker Badge (v7.3) */
+    .topbar-title-row {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    }
+    .topbar-company-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 11px; border-radius: 99px;
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      color: #1e3a8a; font-size: 12.5px; font-weight: 700;
+      max-width: 520px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .topbar-ticker-pill {
+      display: inline-flex; align-items: center;
+      padding: 1px 7px; border-radius: 6px;
+      background: #1d4ed8; color: #fff;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.04em;
+    }
   </style>
 </head>
 <body>
@@ -888,7 +906,7 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div>
-          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.1</span></div>
+          <div class="brand-title">Phân Tích BCTC <span class="version-tag">v7.3</span></div>
           <div class="brand-sub">Bản cá nhân · All-in-one</div>
         </div>
       </div>
@@ -969,7 +987,10 @@
     <div class="workspace">
       <header class="topbar">
         <div class="topbar-left">
-          <h1 id="topbarTitle">Dashboard Tổng quan</h1>
+          <div class="topbar-title-row">
+            <h1 id="topbarTitle">Dashboard Tổng quan</h1>
+            <span id="topbarCompanyBadge" class="topbar-company-badge hidden"></span>
+          </div>
           <p id="topbarSubtitle">Đơn vị tính: Tỷ đồng · Tự động lưu cục bộ trên trình duyệt</p>
         </div>
         <div class="topbar-right">
@@ -1961,7 +1982,8 @@
     // ================= 1. DỮ LIỆU MẪU =================
     window.BCTC_SAMPLES = {
       sample_mcm: {
-        companyName: "Công ty Cổ phần Giống bò sữa Mộc Châu (MCM)",
+        companyName: "Công ty Cổ phần Giống bò sữa Mộc Châu",
+        stockCode: "MCM",
         unit: "tỷ đồng",
         periods: ["2020", "2021", "2022", "2023", "2024"],
         budgetLatest: { revenue: 3100, grossProfit: 950, ebitda: 350, ebt: 320, netProfit: 280, ocf: 250 },
@@ -1997,6 +2019,7 @@
       },
       sample_vinamilk: {
         companyName: "Công ty Cổ phần Sữa Việt Nam (Vinamilk)",
+        stockCode: "VNM",
         unit: "tỷ đồng",
         periods: ["2021", "2022", "2023", "2024", "2025"],
         budgetLatest: { revenue: 64500, grossProfit: 26800, ebitda: 14200, ebt: 12100, netProfit: 9615, ocf: 9500 },
@@ -2031,7 +2054,8 @@
         }
       },
       sample_masan: {
-        companyName: "Công ty Cổ phần Tập đoàn Masan (MSN)",
+        companyName: "Công ty Cổ phần Tập đoàn Masan",
+        stockCode: "MSN",
         unit: "tỷ đồng",
         periods: ["2022", "2023", "2024", "2025"],
         budgetLatest: { revenue: 85000, grossProfit: 26000, ebitda: 12000, ebt: 8000, netProfit: 6500, ocf: 5000 },
@@ -2696,6 +2720,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
 
       const state = {
         sampleKey: "sample_5y",
+        activeTab: "tab-dashboard",
         rawData: null,
         data: null,
         autoMode: "auto",
@@ -2711,6 +2736,27 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
 
       const deepClone = o => JSON.parse(JSON.stringify(o));
       const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      function extractTickerFromName(name) {
+        const m = String(name || "").match(/\(([A-Z0-9]{3,4})\)\s*$/);
+        if (m && !["CTCP", "TNHH", "VND", "USD", "BCTC"].includes(m[1])) return m[1];
+        return "";
+      }
+
+      function updateTopbarCompanyBadge() {
+        const badge = document.getElementById("topbarCompanyBadge");
+        if (!badge || !state.data) return;
+        const name = (state.data.companyName || "").trim();
+        const ticker = (state.data.stockCode || extractTickerFromName(name) || "").trim().toUpperCase();
+        if (!name) {
+          badge.classList.add("hidden");
+          return;
+        }
+        const cleanName = ticker ? name.replace(new RegExp("\\s*\\(" + ticker + "\\)\\s*$", "i"), "").trim() : name;
+        badge.innerHTML = `<span>🏢 ${esc(cleanName)}</span>` + (ticker ? `<span class="topbar-ticker-pill">${esc(ticker)}</span>` : "");
+        badge.title = cleanName + (ticker ? ` (${ticker})` : "");
+        badge.classList.remove("hidden");
+      }
 
       function showStatus(msg, type = "good") {
         const el = document.getElementById("globalStatus");
@@ -2876,9 +2922,11 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           selEl.value = state.sampleKey;
         }
         document.getElementById("companyNameInput").value = state.data.companyName || "";
+        updateTopbarCompanyBadge();
         const topSub = document.getElementById("topbarSubtitle");
         if (topSub) {
-          topSub.textContent = `${state.data.companyName || "Doanh nghiệp"} · Đơn vị: ${state.data.unit || "tỷ đồng"} · Tự động lưu cục bộ`;
+          const meta = TAB_META[state.activeTab];
+          topSub.textContent = meta ? meta[1] : `Đơn vị: ${state.data.unit || "tỷ đồng"} · Tự động lưu cục bộ`;
         }
 
         const pSel = document.getElementById("dashboardPeriodSelect");
@@ -3557,9 +3605,7 @@ ${alerts.map((a, i) => `${i + 1}. [${a.level.toUpperCase()}] ${a.title}\n   ${a.
           }
           const pageBadges = hits.map(h => `${h.file} (Tr. ${h.pages.join(", ")})`).join(" · ");
           const combinedExcerpt = hits.map(h => `📄 ${h.file}:
-${h.text}`).join("
-
-").slice(0, 3500);
+${h.text}`).join("\n\n").slice(0, 3500);
           return `
             <div class="note-card found">
               <div>
@@ -3583,9 +3629,7 @@ ${h.text}`).join("
         const hits = (window._aggNotes && window._aggNotes[catKey]) || [];
         if (!meta) return;
         const excerpt = hits.map(h => `=== ${h.file} (Trang ${h.pages.join(", ")}) ===
-${h.text}`).join("
-
-").slice(0, 14000);
+${h.text}`).join("\n\n").slice(0, 14000);
         const inp = document.getElementById("docChatInput");
         if (inp) {
           inp.value = `${meta.prompt}
@@ -3603,11 +3647,8 @@ ${excerpt || "(Hãy đọc trực tiếp từ các file BCTC đã tải lên)"}`
           if (!hits.length) return "";
           return `### ${cat.title}
 ` + hits.map(h => `[${h.file} - Tr.${h.pages.join(",")}]
-${h.text.slice(0, 3200)}`).join("
-");
-        }).filter(Boolean).join("
-
-");
+${h.text.slice(0, 3200)}`).join("\n");
+        }).filter(Boolean).join("\n\n");
 
         const inp = document.getElementById("docChatInput");
         if (inp) {
@@ -3630,11 +3671,8 @@ ${parts || "(Đọc trực tiếp từ file BCTC đã tải lên)"}`;
           if (!hits.length) return "";
           return `=== ${cat.title.toUpperCase()} ===
 ` + hits.map(h => `[${h.file} - Tr.${h.pages.join(",")}]
-${h.text}`).join("
-");
-        }).filter(Boolean).join("
-
-");
+${h.text}`).join("\n");
+        }).filter(Boolean).join("\n\n");
         if (!parts) return showStatus("Chưa có dữ liệu Thuyết minh được trích xuất. Hãy tải file PDF BCTC trước.", "warn");
         try {
           await navigator.clipboard.writeText(parts);
@@ -4162,14 +4200,15 @@ ${txt}`;
 
       // Global bindings
       window.switchTab = function (id) {
+        state.activeTab = id;
         document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.getAttribute("data-tab") === id));
         document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === id));
         const meta = TAB_META[id];
         if (meta) {
           document.getElementById("topbarTitle").textContent = meta[0];
-          const comp = state.data?.companyName ? `🏢 ${state.data.companyName} · ` : "";
-          document.getElementById("topbarSubtitle").textContent = comp + meta[1];
+          document.getElementById("topbarSubtitle").textContent = meta[1];
         }
+        updateTopbarCompanyBadge();
       };
       window.onSelectSample = function (val) {
         if (val === "custom") { state.sampleKey = "custom"; saveLocal(); return; }
@@ -5072,6 +5111,25 @@ ${txt}`;
         return "Doanh nghiệp của tôi";
       }
 
+      function detectStockTickerFromDocs(parsedDocs, companyName) {
+        const blacklist = new Set(["VND", "USD", "EUR", "CTCP", "TNHH", "BCTC", "KPMG", "IFRS", "HOSE", "UPCOM", "HNX", "VNĐ", "GTGT", "TNDN", "TSCĐ"]);
+        const rxList = [
+          /(?:mã\s+chứng\s+khoán|ma\s+chung\s+khoan|mã\s+cổ\s+phiếu|ma\s+co\s+phieu|mã\s+giao\s+dịch|ma\s+giao\s+dich|ticker)\s*(?:là|la|:|-)?\s*[\x22\x27“”(\[]?([A-Z0-9]{3,4})[\x22\x27“”)\]]?/i,
+          /(?:HOSE|HNX|UPCoM|UpCoM|UPCOM)\s*[:\-]\s*([A-Z]{3})/
+        ];
+        for (const doc of (parsedDocs || [])) {
+          const head = (doc.text || "").slice(0, 18000);
+          for (const rx of rxList) {
+            const m = head.match(rx);
+            if (m && m[1]) {
+              const code = m[1].toUpperCase();
+              if (/^[A-Z][A-Z0-9]{2,3}$/.test(code) && !blacklist.has(code)) return code;
+            }
+          }
+        }
+        return extractTickerFromName(companyName);
+      }
+
       function detectUnitDivisor(text, sampleRevenue) {
         const norm = normalizeVn(text.slice(0, 2500));
         if (/don vi tinh[^a-z0-9]{0,10}(ty|ti)\s*dong/.test(norm) || /\(ty dong\)/.test(norm)) return 1;
@@ -5197,7 +5255,8 @@ ${txt}`;
 
         const prompt = `Bạn là hệ thống trích xuất BCTC tự động. Hãy đọc chính xác tên công ty và số liệu từ các tài liệu (${fileNames.join(", ")}) rồi trả về DUY NHẤT 1 khối JSON hợp lệ (không giải thích thêm, không markdown) theo cấu trúc sau (đơn vị quy đổi về TỶ ĐỒNG, làm tròn 1 chữ số thập phân; các chi phí cogs, sga [= CP bán hàng + CP QLDN], depreciation, interestExpense, taxExpense, capex ghi SỐ DƯƠNG):
 {
-  "companyName": "Tên đầy đủ của doanh nghiệp trong báo cáo",
+  "companyName": "Tên pháp nhân đầy đủ của doanh nghiệp trong báo cáo",
+  "stockCode": "Mã chứng khoán 3 chữ cái nếu có (VD: VNM, MSN, MCM) hoặc chuỗi rỗng",
   "periods": ["2022", "2023", "2024", "2025"],
   "is": { "revenue": [], "cogs": [], "sga": [], "depreciation": [], "finIncome": [], "interestExpense": [], "otherProfit": [], "taxExpense": [] },
   "bs": { "cash": [], "receivables": [], "inventory": [], "otherCurrent": [], "fixedAssets": [], "longTermInvest": [], "otherNonCurrent": [], "shortTermDebt": [], "payables": [], "longTermDebt": [], "equity": [] },
@@ -5238,6 +5297,7 @@ Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
                 const nd = deepClone(state.data);
                 const sheetText = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]).slice(0, 2000);
                 nd.companyName = detectCompanyNameFromDocs([{ text: sheetText }], files);
+                nd.stockCode = detectStockTickerFromDocs([{ text: sheetText }], nd.companyName);
                 nd.periods = periods;
                 ["is", "bs", "cf"].forEach(s => Object.keys(nd[s]).forEach(k => nd[s][k] = periods.map(() => 0)));
                 for (let r = 1; r < rows.length; r++) {
@@ -5295,6 +5355,7 @@ Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
             periodRecords.sort((a, b) => a.period.localeCompare(b.period, undefined, { numeric: true }));
             const nd = deepClone(state.data);
             nd.companyName = detectCompanyNameFromDocs(parsedDocs, files);
+            nd.stockCode = detectStockTickerFromDocs(parsedDocs, nd.companyName);
             nd.periods = periodRecords.map(r => r.period);
             ["is", "bs", "cf"].forEach(sec => {
               Object.keys(nd[sec]).forEach(k => {
@@ -5305,6 +5366,9 @@ Dữ liệu văn bản (nếu có):\n${combinedText.slice(0, 28000)}`;
           } else {
             if (!finalData.companyName || /tên công ty/i.test(finalData.companyName)) {
               finalData.companyName = detectCompanyNameFromDocs(parsedDocs, files);
+            }
+            if (!finalData.stockCode) {
+              finalData.stockCode = detectStockTickerFromDocs(parsedDocs, finalData.companyName);
             }
             finalData.unit = "tỷ đồng";
             finalData.budgetLatest = state.data.budgetLatest;
